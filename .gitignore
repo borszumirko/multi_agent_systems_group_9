@@ -1,0 +1,16 @@
+# Virtual environment
+multi_agent/
+
+# Byte-compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+
+# Environment variables
+.env
