@@ -4,14 +4,14 @@ from constants import (
     AGENT_MAX_FORCE,
     AGENT_MAX_SPEED,
     AGENT_PERCEPTION,
-    BOID_RADIUS,
+    AGENT_RADIUS,
     BOX_LEFT,
     BOX_WIDTH,
     EXIT_POSITION,
     BOX_TOP,
     BOX_HEIGHT,
     EXIT_WIDTH,
-    BOID_COLOR
+    AGENT_COLOR
 )
 class Boid:
     def __init__(self, x, y):
@@ -20,22 +20,22 @@ class Boid:
         self.acceleration = pygame.Vector2(0, 0)
         self.max_speed = AGENT_MAX_SPEED
         self.max_force = AGENT_MAX_FORCE
-        self.perception = BOID_RADIUS * AGENT_PERCEPTION
+        self.perception = AGENT_RADIUS * AGENT_PERCEPTION
 
     def edges(self):
         """Handle boid bounding within the box with an exit."""
-        if self.position.x < BOX_LEFT + BOID_RADIUS:
-            self.position.x = BOX_LEFT + BOID_RADIUS
+        if self.position.x < BOX_LEFT + AGENT_RADIUS:
+            self.position.x = BOX_LEFT + AGENT_RADIUS
             self.velocity.x *= -1
-        elif self.position.x > BOX_LEFT + BOX_WIDTH - BOID_RADIUS and not (EXIT_POSITION[1] <= self.position.y <= EXIT_POSITION[1] + EXIT_WIDTH):
-            self.position.x = BOX_LEFT + BOX_WIDTH - BOID_RADIUS
+        elif self.position.x > BOX_LEFT + BOX_WIDTH - AGENT_RADIUS and not (EXIT_POSITION[1] <= self.position.y <= EXIT_POSITION[1] + EXIT_WIDTH):
+            self.position.x = BOX_LEFT + BOX_WIDTH - AGENT_RADIUS
             self.velocity.x *= -1
         
-        if self.position.y < BOX_TOP + BOID_RADIUS:
-            self.position.y = BOX_TOP + BOID_RADIUS
+        if self.position.y < BOX_TOP + AGENT_RADIUS:
+            self.position.y = BOX_TOP + AGENT_RADIUS
             self.velocity.y *= -1
-        elif self.position.y > BOX_TOP + BOX_HEIGHT - BOID_RADIUS:
-            self.position.y = BOX_TOP + BOX_HEIGHT - BOID_RADIUS
+        elif self.position.y > BOX_TOP + BOX_HEIGHT - AGENT_RADIUS:
+            self.position.y = BOX_TOP + BOX_HEIGHT - AGENT_RADIUS
             self.velocity.y *= -1
     
     def apply_force(self, force):
@@ -98,7 +98,7 @@ class Boid:
         steering = pygame.Vector2(0, 0)
         for other in boids:
             distance = self.position.distance_to(other.position)
-            if other != self and distance < BOID_RADIUS * 2:
+            if other != self and distance < AGENT_RADIUS * 2:
                 diff = self.position - other.position
                 diff /= distance
                 steering += diff
@@ -123,4 +123,4 @@ class Boid:
         return steering
     
     def draw(self, screen):
-        pygame.draw.circle(screen, BOID_COLOR, (int(self.position.x), int(self.position.y)), BOID_RADIUS)
+        pygame.draw.circle(screen, AGENT_COLOR, (int(self.position.x), int(self.position.y)), AGENT_RADIUS)

@@ -10,10 +10,10 @@ from constants import (EXIT_POSITION,
                        BOX_TOP,
                        BOX_WIDTH,
                        BOX_COLOR,
-                       BOID_RADIUS,
+                       AGENT_RADIUS,
                        EXIT_COLOR,
                        BLACK,
-                       BOID_COUNT)
+                       AGENT_COUNT)
 
 class Simulation:
     # Resolve positions function
@@ -70,8 +70,8 @@ class Simulation:
         clock = pygame.time.Clock()
 
         # Create a list of boids
-        boids = [Boid(random.randint(BOX_LEFT + BOID_RADIUS, BOX_LEFT + BOX_WIDTH - BOID_RADIUS), 
-                    random.randint(BOX_TOP + BOID_RADIUS, BOX_TOP + BOX_HEIGHT - BOID_RADIUS)) for _ in range(BOID_COUNT)]
+        boids = [Boid(random.randint(BOX_LEFT + AGENT_RADIUS, BOX_LEFT + BOX_WIDTH - AGENT_RADIUS), 
+                    random.randint(BOX_TOP + AGENT_RADIUS, BOX_TOP + BOX_HEIGHT - AGENT_RADIUS)) for _ in range(AGENT_COUNT)]
 
         # Main loop
         running = True
@@ -99,7 +99,7 @@ class Simulation:
             
             # Step 2: Resolve any overlaps or boundary issues
             positions = [(boid.position.x, boid.position.y) for boid in boids]
-            resolved_positions = self.resolve_positions(positions, BOID_RADIUS, BOX_WIDTH, BOX_HEIGHT, BOX_LEFT, BOX_TOP)
+            resolved_positions = self.resolve_positions(positions, AGENT_RADIUS, BOX_WIDTH, BOX_HEIGHT, BOX_LEFT, BOX_TOP)
             
             # Step 3: Update boid positions after resolving
             for i, boid in enumerate(boids):
