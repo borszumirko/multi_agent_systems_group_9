@@ -5,11 +5,7 @@ from constants import (
     AGENT_MAX_SPEED,
     AGENT_PERCEPTION,
     AGENT_RADIUS,
-    BOX_LEFT,
-    BOX_WIDTH,
     EXIT_POSITION,
-    BOX_TOP,
-    BOX_HEIGHT,
     EXIT_WIDTH,
     AGENT_COLOR
 )
@@ -21,22 +17,6 @@ class Boid:
         self.max_speed = AGENT_MAX_SPEED
         self.max_force = AGENT_MAX_FORCE
         self.perception = AGENT_RADIUS * AGENT_PERCEPTION
-
-    def edges(self):
-        """Handle boid bounding within the box with an exit."""
-        if self.position.x < BOX_LEFT + AGENT_RADIUS:
-            self.position.x = BOX_LEFT + AGENT_RADIUS
-            self.velocity.x *= -1
-        elif self.position.x > BOX_LEFT + BOX_WIDTH - AGENT_RADIUS and not (EXIT_POSITION[1] <= self.position.y <= EXIT_POSITION[1] + EXIT_WIDTH):
-            self.position.x = BOX_LEFT + BOX_WIDTH - AGENT_RADIUS
-            self.velocity.x *= -1
-        
-        if self.position.y < BOX_TOP + AGENT_RADIUS:
-            self.position.y = BOX_TOP + AGENT_RADIUS
-            self.velocity.y *= -1
-        elif self.position.y > BOX_TOP + BOX_HEIGHT - AGENT_RADIUS:
-            self.position.y = BOX_TOP + BOX_HEIGHT - AGENT_RADIUS
-            self.velocity.y *= -1
     
     def apply_force(self, force):
         """Add force to acceleration."""
@@ -62,6 +42,8 @@ class Boid:
         self.apply_force(separation)
         self.apply_force(exit_steering)
     
+    # TODO: Store distance to other agents so we don't have to calculate it for every boid method
+
     def align(self, boids):
         total = 0
         steering = pygame.Vector2(0, 0)

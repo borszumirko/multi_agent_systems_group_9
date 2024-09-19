@@ -14,3 +14,11 @@ __pycache__/
 
 # Environment variables
 .env
+
+# Ignore cProfile and Snakeviz profile files
+*.prof
+*.svg
+*.profile
+profile.prof
+profile.svg
+profiling_stats*
