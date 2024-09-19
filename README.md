@@ -1,8 +1,7 @@
 ## Setup Instructions
 
-### 1. Create and activate Virtual Environment
-
-### 2. Install the required packages
+### Install the required packages into the virtual environment
 ```bash
 pip install -r requirements.txt
+
 
