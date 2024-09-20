@@ -18,7 +18,10 @@ class Boid:
         self.acceleration = pygame.Vector2(0, 0)
         self.max_speed = AGENT_MAX_SPEED
         self.max_force = AGENT_MAX_FORCE
-        self.perception = AGENT_RADIUS * AGENT_PERCEPTION
+        self.avoid_distance = 2 * AGENT_RADIUS + 2
+        self.cohesion_distance = 8 * AGENT_RADIUS
+        self.alignment_distance = 4 * AGENT_RADIUS
+        self.perception = max(self.avoid_distance, self.alignment_distance, self.cohesion_distance)
         self.id = id
         self.distances = np.full(AGENT_COUNT, fill_value=-1)
 
@@ -42,6 +45,7 @@ class Boid:
         separation = self.separate(boids)
         exit_steering = self.steer_to_exit()
         
+
         self.apply_force(alignment)
         self.apply_force(cohesion)
         self.apply_force(separation)
@@ -53,13 +57,15 @@ class Boid:
         total = 0
         steering = pygame.Vector2(0, 0)
         for other in boids:
-            if other != self and self.distances[other.id] != -1:
+            distance = self.distances[other.id]
+            if other != self and distance < self.alignment_distance and distance != -1:
                 steering += other.velocity
                 total += 1
         if total > 0:
             steering /= total
             steering = steering.normalize() * self.max_speed
             steering -= self.velocity
+            steering *= 1.5
             if steering.length() > self.max_force:
                 steering.scale_to_length(self.max_force)
         return steering
@@ -68,7 +74,8 @@ class Boid:
         total = 0
         steering = pygame.Vector2(0, 0)
         for other in boids:
-            if other != self and self.distances[other.id] != -1:
+            distance = self.distances[other.id]
+            if other != self and distance < self.cohesion_distance and distance != -1:
                 steering += other.position
                 total += 1
         if total > 0:
@@ -76,6 +83,7 @@ class Boid:
             steering -= self.position
             steering = steering.normalize() * self.max_speed
             steering -= self.velocity
+            steering *= 1.5
             if steering.length() > self.max_force:
                 steering.scale_to_length(self.max_force)
         return steering
@@ -85,9 +93,9 @@ class Boid:
         steering = pygame.Vector2(0, 0)
         for other in boids:
             distance = self.distances[other.id]
-            if other != self and distance < AGENT_RADIUS * 2 and distance != -1:
+            if other != self and distance < self.avoid_distance and distance != -1:
                 diff = self.position - other.position
-                diff /= distance
+                diff /= distance + 0.00000000001
                 steering += diff
                 total += 1
         if total > 0:
@@ -95,6 +103,7 @@ class Boid:
             if steering.length() > 0:
                 steering = steering.normalize() * self.max_speed
             steering -= self.velocity
+            steering *= 2.5
             if steering.length() > self.max_force:
                 steering.scale_to_length(self.max_force)
         return steering
@@ -105,6 +114,7 @@ class Boid:
         if steering.length() > 0:
             steering = steering.normalize() * self.max_speed
         steering -= self.velocity
+        steering *= 6.5
         if steering.length() > self.max_force:
             steering.scale_to_length(self.max_force)
         return steering
