@@ -1,6 +1,8 @@
 import numpy as np
 import pygame
 import random
+import math
+
 from boid_agent import Boid
 from constants import (EXIT_POSITION,
                        EXIT_WIDTH,
@@ -21,6 +23,8 @@ class Simulation:
 
     # Resolve positions function
     def resolve_positions(self, positions, radius, box_width, box_height, box_left, box_top):
+        ''' Ensures that agents don't overlap and stay within the box '''
+
         positions = np.array(positions)
         n_agents = len(positions)
         
@@ -50,6 +54,7 @@ class Simulation:
 
                 distance = np.linalg.norm(pos_i - pos_j)
                 
+
                 # If overlapping, move them apart
                 if distance < 2 * radius:
                     overlap = 2 * radius - distance
@@ -71,6 +76,25 @@ class Simulation:
 
         return positions.tolist()
 
+    def record_distances(self, boids):
+        ''' Records distances of other agents within every agent's perception'''
+        count = len(boids)
+        for i in range(count):
+            boids[i].distances = np.full(AGENT_COUNT, fill_value=-1)
+            for j in range(i+1, count):
+                boid_x = boids[i].position.x
+                boid_y = boids[i].position.y
+                other_x = boids[j].position.x
+                other_y = boids[j].position.y
+                # If too far, don't calculate norm
+                if abs(boid_x - other_x) > boids[i].perception or abs(boid_y - other_y) > boids[i].perception:
+                    continue
+                distance = math.dist((boid_x, boid_y),  (other_x, other_y))
+                
+                boids[i].distances[boids[j].id] = distance
+                boids[j].distances[boids[i].id] = distance
+
+
     def main_loop(self):
         # Initialize Pygame
         pygame.init()
@@ -79,7 +103,7 @@ class Simulation:
 
         # Create a list of boids
         boids = [Boid(random.randint(BOX_LEFT + AGENT_RADIUS, BOX_LEFT + BOX_WIDTH - AGENT_RADIUS), 
-                    random.randint(BOX_TOP + AGENT_RADIUS, BOX_TOP + BOX_HEIGHT - AGENT_RADIUS)) for _ in range(AGENT_COUNT)]
+                    random.randint(BOX_TOP + AGENT_RADIUS, BOX_TOP + BOX_HEIGHT - AGENT_RADIUS), i) for i in range(AGENT_COUNT)]
 
         # Main loop
         running = True
@@ -102,10 +126,13 @@ class Simulation:
             # Exit if no more agents
             if boids == []:
                 running = False
+            
+            np_boids = np.array(boids, dtype=object)
+            self.record_distances(np_boids)
 
             # Update positions of the boids
             for boid in boids:
-                boid.flock(boids)
+                boid.flock(np_boids)
                 boid.update()
             
             # Resolve any overlaps or boundary issues

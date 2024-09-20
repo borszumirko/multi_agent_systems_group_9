@@ -1,5 +1,6 @@
 import pygame
 import random
+import numpy as np
 from constants import (
     AGENT_MAX_FORCE,
     AGENT_MAX_SPEED,
@@ -7,16 +8,20 @@ from constants import (
     AGENT_RADIUS,
     EXIT_POSITION,
     EXIT_WIDTH,
-    AGENT_COLOR
+    AGENT_COLOR,
+    AGENT_COUNT
 )
 class Boid:
-    def __init__(self, x, y):
+    def __init__(self, x, y, id):
         self.position = pygame.Vector2(x, y)
         self.velocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
         self.acceleration = pygame.Vector2(0, 0)
         self.max_speed = AGENT_MAX_SPEED
         self.max_force = AGENT_MAX_FORCE
         self.perception = AGENT_RADIUS * AGENT_PERCEPTION
+        self.id = id
+        self.distances = np.full(AGENT_COUNT, fill_value=-1)
+
     
     def apply_force(self, force):
         """Add force to acceleration."""
@@ -48,7 +53,7 @@ class Boid:
         total = 0
         steering = pygame.Vector2(0, 0)
         for other in boids:
-            if other != self and self.position.distance_to(other.position) < self.perception:
+            if other != self and self.distances[other.id] != -1:
                 steering += other.velocity
                 total += 1
         if total > 0:
@@ -63,7 +68,7 @@ class Boid:
         total = 0
         steering = pygame.Vector2(0, 0)
         for other in boids:
-            if other != self and self.position.distance_to(other.position) < self.perception:
+            if other != self and self.distances[other.id] != -1:
                 steering += other.position
                 total += 1
         if total > 0:
@@ -79,8 +84,8 @@ class Boid:
         total = 0
         steering = pygame.Vector2(0, 0)
         for other in boids:
-            distance = self.position.distance_to(other.position)
-            if other != self and distance < AGENT_RADIUS * 2:
+            distance = self.distances[other.id]
+            if other != self and distance < AGENT_RADIUS * 2 and distance != -1:
                 diff = self.position - other.position
                 diff /= distance
                 steering += diff
