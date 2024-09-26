@@ -3,7 +3,7 @@ import pygame
 import random
 import math
 
-from boid_agent import Boid
+from agent import Agent
 from constants import (EXIT_POSITION,
                        EXIT_WIDTH,
                        WIDTH, HEIGHT,
@@ -102,7 +102,7 @@ class Simulation:
         clock = pygame.time.Clock()
 
         # Create a list of boids
-        boids = [Boid(random.randint(BOX_LEFT + AGENT_RADIUS, BOX_LEFT + BOX_WIDTH - AGENT_RADIUS), 
+        agents = [Agent(random.randint(BOX_LEFT + AGENT_RADIUS, BOX_LEFT + BOX_WIDTH - AGENT_RADIUS), 
                     random.randint(BOX_TOP + AGENT_RADIUS, BOX_TOP + BOX_HEIGHT - AGENT_RADIUS), i) for i in range(AGENT_COUNT)]
 
         # Main loop
@@ -120,32 +120,32 @@ class Simulation:
             # Exit
             pygame.draw.rect(screen, EXIT_COLOR, (*EXIT_POSITION, 15, EXIT_WIDTH))
             
-            # Update and draw all boids
-            boids = [boid for boid in boids if boid.position.x <= BOX_LEFT + BOX_WIDTH or not (EXIT_POSITION[1] <= boid.position.y <= EXIT_POSITION[1] + EXIT_WIDTH)]
+            # Update and draw aagents
+            agents = [agent for agent in agents if agent.position.x <= BOX_LEFT + BOX_WIDTH or not (EXIT_POSITION[1] <= agent.position.y <= EXIT_POSITION[1] + EXIT_WIDTH)]
             
             # Exit if no more agents
-            if boids == []:
+            if agents == []:
                 running = False
             
-            np_boids = np.array(boids, dtype=object)
-            self.record_distances(np_boids)
+            np_agents = np.array(agents, dtype=object)
+            self.record_distances(np_agents)
 
-            # Update positions of the boids
-            for boid in boids:
-                boid.flock(np_boids)
-                boid.update()
+            # Update positions of the agents
+            for agent in agents:
+                agent.flock(np_agents)
+                agent.update()
             
             # Resolve any overlaps or boundary issues
-            positions = [(boid.position.x, boid.position.y) for boid in boids]
+            positions = [(agent.position.x, agent.position.y) for agent in agents]
             resolved_positions = self.resolve_positions(positions, AGENT_RADIUS, BOX_WIDTH, BOX_HEIGHT, BOX_LEFT, BOX_TOP)
             
             # Update boid positions after resolving
-            for i, boid in enumerate(boids):
-                boid.position.x, boid.position.y = resolved_positions[i]
+            for i, agent in enumerate(agents):
+                agent.position.x, agent.position.y = resolved_positions[i]
 
-            # Draw all boids
-            for boid in boids:
-                boid.draw(screen)
+            # Draw all agents
+            for agent in agents:
+                agent.draw(screen)
             
             pygame.display.flip()
             clock.tick(60)
