@@ -10,14 +10,18 @@ from constants import (
     EXIT_WIDTH,
     AGENT_COLOR,
     AGENT_COUNT,
-    ENV_LENGTH
+    ENV_LENGTH,
+    BOX_LEFT,
+    BOX_HEIGHT,
+    BOX_TOP,
+    BOX_WIDTH
 )
 class Agent:
     def __init__(self, x, y, id):
         self.position = pygame.Vector2(x, y)
         self.velocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
         self.acceleration = pygame.Vector2(0, 0)
-        self.max_speed = random.uniform(1.5, AGENT_MAX_SPEED)
+        self.max_speed = random.uniform(AGENT_MAX_SPEED * 0.85, AGENT_MAX_SPEED)
         self.max_force = AGENT_MAX_FORCE
         self.avoid_distance = 2 * AGENT_RADIUS + 2
         self.cohesion_distance = 8 * AGENT_RADIUS
@@ -45,13 +49,14 @@ class Agent:
         self.position += self.velocity
         self.acceleration *= 0
     
-    def flock(self, boids):
+    def flock(self, boids, obstacles):
         """Apply flocking behaviors with a bias towards the exit."""
         alignment, align_panic = self.align(boids)
         cohesion = self.cohere(boids)
         separation = self.separate(boids)
         exit_steering, exit_panic = self.steer_to_exit()
         
+
         new_panic = (align_panic + exit_panic) / 2
         panic_update = (self.panic + new_panic) / 2
         if panic_update >= 0:
@@ -134,7 +139,19 @@ class Agent:
         return steering
 
     def steer_to_exit(self):
-        target = pygame.Vector2(EXIT_POSITION[0], EXIT_POSITION[1] + EXIT_WIDTH / 2)
+        if  (BOX_LEFT <= self.position.x <= BOX_LEFT + 100 and self.position.y < BOX_TOP + BOX_HEIGHT - 200) or (BOX_LEFT + BOX_WIDTH - 100 <= self.position.x <= BOX_LEFT + BOX_WIDTH and self.position.y < BOX_TOP + BOX_HEIGHT - 200): # down
+            target = pygame.Vector2(self.position.x, BOX_TOP + BOX_HEIGHT)
+            # self.color = (255, 0, 0)
+        elif self.position.y >= BOX_TOP + BOX_HEIGHT - 200: # exit
+            target = pygame.Vector2(EXIT_POSITION[0], EXIT_POSITION[1] + EXIT_WIDTH / 2)
+            # self.color = (0, 255, 0)
+        else:
+            if self.position.x - BOX_LEFT < BOX_LEFT + BOX_WIDTH - self.position.x:
+                x = BOX_LEFT
+            else:
+                x = BOX_LEFT + BOX_WIDTH                                               # left
+            target = pygame.Vector2(x, self.position.y)
+            # self.color = (0, 0, 255)
         steering = target - self.position
         panic_component = 1 / ENV_LENGTH * (steering.length() - self.ease_distance)
         if steering.length() > 0:
@@ -145,6 +162,9 @@ class Agent:
             steering.scale_to_length(self.max_force)
         return steering, panic_component
     
+
+
+
     def draw(self, screen):
         pygame.draw.circle(screen, self.color, (int(self.position.x), int(self.position.y)), AGENT_RADIUS)
         

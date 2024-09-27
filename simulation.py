@@ -2,8 +2,10 @@ import numpy as np
 import pygame
 import random
 import math
+import time
 
 from agent import Agent
+from obstacle import Obstacle
 from constants import (EXIT_POSITION,
                        EXIT_WIDTH,
                        WIDTH, HEIGHT,
@@ -22,7 +24,7 @@ class Simulation:
         self.total_agents = AGENT_COUNT
 
     # Resolve positions function
-    def resolve_positions(self, positions, radius, box_width, box_height, box_left, box_top):
+    def resolve_positions(self, positions, radius, box_width, box_height, box_left, box_top, obstacles):
         ''' Ensures that agents don't overlap and stay within the box '''
 
         positions = np.array(positions)
@@ -41,6 +43,14 @@ class Simulation:
                 y = max(box_top + radius, min(y, box_top + box_height - radius))
             
             positions[i] = np.array([x, y])
+        
+        for i in range(n_agents):
+            x, y = positions[i]
+            n_obstacles = len(obstacles)
+            for j in range(n_obstacles):
+                # Check if the agent is inside the rectangle
+                #if obstacle[j]
+                pass
 
         # Resolve overlaps between agents
         for i in range(n_agents):
@@ -102,9 +112,16 @@ class Simulation:
         clock = pygame.time.Clock()
 
         # Create a list of boids
-        agents = [Agent(random.randint(BOX_LEFT + AGENT_RADIUS, BOX_LEFT + BOX_WIDTH - AGENT_RADIUS), 
-                    random.randint(BOX_TOP + AGENT_RADIUS, BOX_TOP + BOX_HEIGHT - AGENT_RADIUS), i) for i in range(AGENT_COUNT)]
+        # agents = [Agent(random.randint(BOX_LEFT + AGENT_RADIUS, BOX_LEFT + BOX_WIDTH - AGENT_RADIUS), 
+        #             random.randint(BOX_TOP + AGENT_RADIUS, BOX_TOP + BOX_HEIGHT - AGENT_RADIUS), i) for i in range(AGENT_COUNT)]
+        starting_positions = []
+        for i in range(AGENT_COUNT // 15):
+            row = i % 10
+            for j in range(15):
+                col = j
+                starting_positions.append((BOX_LEFT + 145 + col * (AGENT_RADIUS + 50), BOX_TOP + 30 + (row+1)* 60))
 
+        agents = [Agent(x, y, id) for (id, (x, y)) in enumerate(starting_positions)]
         # Main loop
         running = True
         while running:
@@ -120,7 +137,15 @@ class Simulation:
             # Exit
             pygame.draw.rect(screen, EXIT_COLOR, (*EXIT_POSITION, 15, EXIT_WIDTH))
             
-            # Update and draw aagents
+            # Obstacles
+            obstacles = []
+            for i in range(10):
+                obstacles.append(Obstacle(BOX_LEFT + 100, BOX_TOP + (i+1) * 60 + 50, 1000, 20))
+
+            for obstacle in obstacles:
+                obstacle.draw(screen)
+
+            # Update and draw agents
             agents = [agent for agent in agents if agent.position.x <= BOX_LEFT + BOX_WIDTH or not (EXIT_POSITION[1] <= agent.position.y <= EXIT_POSITION[1] + EXIT_WIDTH)]
             
             # Exit if no more agents
@@ -132,12 +157,12 @@ class Simulation:
 
             # Update positions of the agents
             for agent in agents:
-                agent.flock(np_agents)
+                agent.flock(np_agents, obstacles)
                 agent.update()
             
             # Resolve any overlaps or boundary issues
             positions = [(agent.position.x, agent.position.y) for agent in agents]
-            resolved_positions = self.resolve_positions(positions, AGENT_RADIUS, BOX_WIDTH, BOX_HEIGHT, BOX_LEFT, BOX_TOP)
+            resolved_positions = self.resolve_positions(positions, AGENT_RADIUS, BOX_WIDTH, BOX_HEIGHT, BOX_LEFT, BOX_TOP, obstacles)
             
             # Update boid positions after resolving
             for i, agent in enumerate(agents):
@@ -146,8 +171,9 @@ class Simulation:
             # Draw all agents
             for agent in agents:
                 agent.draw(screen)
-            
+
             pygame.display.flip()
+        
             clock.tick(60)
 
         pygame.quit()
