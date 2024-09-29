@@ -23,7 +23,6 @@ class Simulation:
     def __init__(self):
         self.total_agents = AGENT_COUNT
 
-    # Resolve positions function
     def resolve_positions(self, positions, radius, box_width, box_height, box_left, box_top, obstacles):
         ''' Ensures that agents don't overlap and stay within the box '''
 
@@ -44,13 +43,6 @@ class Simulation:
             
             positions[i] = np.array([x, y])
         
-        for i in range(n_agents):
-            x, y = positions[i]
-            n_obstacles = len(obstacles)
-            for j in range(n_obstacles):
-                # Check if the agent is inside the rectangle
-                #if obstacle[j]
-                pass
 
         # Resolve overlaps between agents
         for i in range(n_agents):
@@ -87,7 +79,11 @@ class Simulation:
         return positions.tolist()
 
     def record_distances(self, boids):
-        ''' Records distances of other agents within every agent's perception'''
+        '''
+        Records distances of other agents within every agent's perception so they don't
+        have to be recaluculated when trying to execute the bois behavours
+        '''
+
         count = len(boids)
         for i in range(count):
             boids[i].distances = np.full(AGENT_COUNT, fill_value=-1)
@@ -111,9 +107,7 @@ class Simulation:
         screen = pygame.display.set_mode((WIDTH, HEIGHT))
         clock = pygame.time.Clock()
 
-        # Create a list of boids
-        # agents = [Agent(random.randint(BOX_LEFT + AGENT_RADIUS, BOX_LEFT + BOX_WIDTH - AGENT_RADIUS), 
-        #             random.randint(BOX_TOP + AGENT_RADIUS, BOX_TOP + BOX_HEIGHT - AGENT_RADIUS), i) for i in range(AGENT_COUNT)]
+        # Agents start behind the desks
         starting_positions = []
         for i in range(AGENT_COUNT // 15):
             row = i % 10
@@ -122,6 +116,7 @@ class Simulation:
                 starting_positions.append((BOX_LEFT + 145 + col * (AGENT_RADIUS + 50), BOX_TOP + 30 + (row+1)* 60))
 
         agents = [Agent(x, y, id) for (id, (x, y)) in enumerate(starting_positions)]
+        
         # Main loop
         running = True
         while running:

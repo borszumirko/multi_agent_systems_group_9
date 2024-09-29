@@ -8,7 +8,7 @@ def main():
     simulation = Simulation()
     simulation.main_loop()
 
-
+import random
 if __name__=="__main__":
     main()
     #cProfile.run('main()', 'profiling_stats')

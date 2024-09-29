@@ -9,6 +9,7 @@ class Obstacle():
         self.center = pygame.Vector2(left + width // 2, top + height // 2)
 
     def away_from_obst(self, agent_x, agent_y):
+        ''' Returns a vector that points away from the obstacle towards the agent '''
         vector = pygame.Vector2(agent_x - self.center.x, agent_y - self.center.y)
         return vector, vector.length()
 
