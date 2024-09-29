@@ -4,7 +4,6 @@ import numpy as np
 from constants import (
     AGENT_MAX_FORCE,
     AGENT_MAX_SPEED,
-    AGENT_PERCEPTION,
     AGENT_RADIUS,
     EXIT_POSITION,
     EXIT_WIDTH,
@@ -38,25 +37,32 @@ class Agent:
 
     
     def apply_force(self, force):
-        """Add force to acceleration."""
+        """
+        Add force to acceleration.
+        """
         self.acceleration += force
 
     def update(self):
-        """Update boid's velocity and position."""
-
+        """
+        Update boid's velocity and position.
+        """
         # panic influences change in velocity
-        self.velocity = self.velocity * self.panic + self.acceleration * (1 - self.panic)
+        # self.velocity = self.velocity * self.panic + self.acceleration * (1 - self.panic)
+        self.velocity += self.acceleration
         if self.velocity.length() > self.max_speed:
             self.velocity.scale_to_length(self.max_speed)
         self.position += self.velocity
         self.acceleration *= 0
     
-    def flock(self, boids, obstacles):
-        """Apply flocking behaviors with a bias towards the exit."""
-        alignment, align_panic = self.align(boids)
-        cohesion = self.cohere(boids)
-        separation = self.separate(boids)
+    def flock(self, agents, obstacles):
+        """
+        Apply flocking behaviors with a bias towards the exit.
+        """
+        alignment, align_panic = self.align(agents)
+        cohesion = self.cohere(agents)
+        separation = self.separate(agents)
         exit_steering, exit_panic = self.steer_to_exit()
+        avoid_obstacles = self.avoid_obstacles(obstacles)
         
         new_panic = (align_panic + exit_panic) / 2
         panic_update = (self.panic + new_panic) / 2
@@ -77,9 +83,10 @@ class Agent:
         self.apply_force(alignment)
         self.apply_force(separation)
         self.apply_force(exit_steering)
+        self.apply_force(avoid_obstacles)
     
 
-    def align(self, boids):
+    def align(self, agents):
         '''
         An agent tries to align its velocity vector with the ones
         around it within self.alignment_distance
@@ -87,7 +94,7 @@ class Agent:
         total = 0
         steering = pygame.Vector2(0, 0)
         panic_component = 0
-        for other in boids:
+        for other in agents:
             distance = self.distances[other.id]
             if other != self and distance < self.alignment_distance and distance != -1:
                 steering += other.velocity
@@ -102,7 +109,7 @@ class Agent:
                 steering.scale_to_length(self.max_force)
         return steering, panic_component
 
-    def cohere(self, boids):
+    def cohere(self, agents):
         '''
         Agents try to move tovards the average position of agents within
         self.cohesion_distance
@@ -110,7 +117,7 @@ class Agent:
         total = 0
         steering = pygame.Vector2(0, 0)
         others_panic = 0
-        for other in boids:
+        for other in agents:
             distance = self.distances[other.id]
             if other != self and distance < self.cohesion_distance and distance != -1:
                 steering += other.position
@@ -121,21 +128,22 @@ class Agent:
             self.avg_panic_around = others_panic
             steering /= total
             steering -= self.position
-            steering = steering.normalize() * self.max_speed
+            if steering.length() > 0:
+                steering = steering.normalize() * self.max_speed
             steering -= self.velocity
             steering *= 1.5
             if steering.length() > self.max_force:
                 steering.scale_to_length(self.max_force)
         return steering
 
-    def separate(self, boids):
+    def separate(self, agents):
         '''
         Agent try to sep[arate themself from nearby agents within
         self.avoid_distance
         '''
         total = 0
         steering = pygame.Vector2(0, 0)
-        for other in boids:
+        for other in agents:
             distance = self.distances[other.id]
             if other != self and distance < self.avoid_distance and distance != -1:
                 diff = self.position - other.position
@@ -156,7 +164,6 @@ class Agent:
         '''
         Agents choose a subgoal based on their position and try to steer towards it
         '''
-
         # If on the side out from the rows, go down
         if  (BOX_LEFT <= self.position.x <= BOX_LEFT + 100 and self.position.y < BOX_TOP + BOX_HEIGHT - 200) or (BOX_LEFT + BOX_WIDTH - 100 <= self.position.x <= BOX_LEFT + BOX_WIDTH and self.position.y < BOX_TOP + BOX_HEIGHT - 200):
             target = pygame.Vector2(self.position.x, BOX_TOP + BOX_HEIGHT)
@@ -178,6 +185,26 @@ class Agent:
             steering.scale_to_length(self.max_force)
         return steering, panic_component
     
+    def avoid_obstacles(self, obstacles):
+        '''
+        Agents try to steer away from nearby obstacles
+        '''
+        total = 0
+        steering = pygame.Vector2(0, 0)
+        for obstacle in obstacles:
+            vector, vector_length = obstacle.away_from_obst(self.position.x, self.position.y)
+            if vector_length <= self.avoid_distance:
+                steering += vector
+                total += 1
+        if total > 0:
+            steering /= total
+            if steering.length() > 0:
+                steering = steering.normalize() * self.max_speed
+            steering *= 3.5
+            if steering.length() > self.max_force:
+                steering.scale_to_length(self.max_force)
+        return steering
+
     def draw(self, screen):
         pygame.draw.circle(screen, self.color, (int(self.position.x), int(self.position.y)), AGENT_RADIUS)
         

@@ -24,7 +24,9 @@ class Simulation:
         self.total_agents = AGENT_COUNT
 
     def resolve_positions(self, positions, radius, box_width, box_height, box_left, box_top, obstacles):
-        ''' Ensures that agents don't overlap and stay within the box '''
+        '''
+        Ensures that agents don't overlap and stay within the box
+        '''
 
         positions = np.array(positions)
         n_agents = len(positions)
