@@ -6,7 +6,7 @@ import time
 
 from agent import Agent
 from obstacle import Obstacle
-from constants import (EXIT_POSITION,
+from constants import (EXITS,
                        EXIT_WIDTH,
                        WIDTH, HEIGHT,
                        BOX_LEFT,
@@ -27,37 +27,43 @@ class Simulation:
         '''
         Ensures that agents don't overlap and stay within the box
         '''
-
         positions = np.array(positions)
         n_agents = len(positions)
-        
-        # All agents are within the bounding box, except those near the exit
+
+        # Resolve boundary constraints and overlaps for each agent
         for i in range(n_agents):
             x, y = positions[i]
             
-            # Check if the boid is near the exit
-            in_exit_area = (x > box_left + box_width - radius) and (EXIT_POSITION[1] <= y <= EXIT_POSITION[1] + EXIT_WIDTH)
-            
+            # Determine if the agent is near any exit
+            in_exit_area = False
+            for exit in EXITS:
+                exit_x, exit_y = exit["position"]
+                exit_width = exit["width"]
+
+                # If the exit is on the right or left, check if the agent is near it
+                if ((x > box_left + box_width - radius and exit_x >= box_left + box_width - radius) or
+                    (x < box_left + radius and exit_x <= box_left + radius)) and (exit_y <= y <= exit_y + exit_width):
+                    in_exit_area = True
+                    break
+
             if not in_exit_area:
                 # Boundary checks if not in the exit area
                 x = max(box_left + radius, min(x, box_left + box_width - radius))
                 y = max(box_top + radius, min(y, box_top + box_height - radius))
             
             positions[i] = np.array([x, y])
-        
 
         # Resolve overlaps between agents
         for i in range(n_agents):
             for j in range(i + 1, n_agents):
                 pos_i = positions[i]
                 pos_j = positions[j]
-
+                
                 # If too far, don't calculate norm
                 if abs(pos_i[0] - pos_j[0]) > AGENT_RADIUS * 2 or abs(pos_i[1] - pos_j[1]) > AGENT_RADIUS * 2:
                     continue
 
                 distance = np.linalg.norm(pos_i - pos_j)
-                
 
                 # If overlapping, move them apart
                 if distance < 2 * radius:
@@ -67,18 +73,25 @@ class Simulation:
                     positions[j] -= direction * overlap / 2
 
                     # Ensure the adjusted positions are within the boundaries again
-                    in_exit_area_i = (positions[i][0] > box_left + box_width - radius) and (EXIT_POSITION[1] <= positions[i][1] <= EXIT_POSITION[1] + EXIT_WIDTH)
-                    in_exit_area_j = (positions[j][0] > box_left + box_width - radius) and (EXIT_POSITION[1] <= positions[j][1] <= EXIT_POSITION[1] + EXIT_WIDTH)
-                    
-                    if not in_exit_area_i:
-                        positions[i][0] = max(box_left + radius, min(positions[i][0], box_left + box_width - radius))
-                        positions[i][1] = max(box_top + radius, min(positions[i][1], box_top + box_height - radius))
-                    
-                    if not in_exit_area_j:
-                        positions[j][0] = max(box_left + radius, min(positions[j][0], box_left + box_width - radius))
-                        positions[j][1] = max(box_top + radius, min(positions[j][1], box_top + box_height - radius))
+                    for agent_position in [positions[i], positions[j]]:
+                        in_exit_area = False
+                        for exit in EXITS:
+                            exit_x, exit_y = exit["position"]
+                            exit_width = exit["width"]
+
+                            # Allow movement through the exit areas on either side
+                            if ((agent_position[0] > box_left + box_width - radius and exit_x >= box_left + box_width - radius) or
+                                (agent_position[0] < box_left + radius and exit_x <= box_left + radius)) and (exit_y <= agent_position[1] <= exit_y + exit_width):
+                                in_exit_area = True
+                                break
+
+                        if not in_exit_area:
+                            agent_position[0] = max(box_left + radius, min(agent_position[0], box_left + box_width - radius))
+                            agent_position[1] = max(box_top + radius, min(agent_position[1], box_top + box_height - radius))
 
         return positions.tolist()
+
+
 
     def record_distances(self, boids):
         '''
@@ -131,8 +144,9 @@ class Simulation:
             # Box
             pygame.draw.rect(screen, BOX_COLOR, (BOX_LEFT, BOX_TOP, BOX_WIDTH, BOX_HEIGHT), 1)
             
-            # Exit
-            pygame.draw.rect(screen, EXIT_COLOR, (*EXIT_POSITION, 15, EXIT_WIDTH))
+            # Draw all exits
+            for exit in EXITS:
+                pygame.draw.rect(screen, EXIT_COLOR, (*exit["position"], 15, exit["width"]))
             
             # Obstacles
             obstacles = []
@@ -142,9 +156,19 @@ class Simulation:
             for obstacle in obstacles:
                 obstacle.draw(screen)
 
-            # Update and draw agents
-            agents = [agent for agent in agents if agent.position.x <= BOX_LEFT + BOX_WIDTH or not (EXIT_POSITION[1] <= agent.position.y <= EXIT_POSITION[1] + EXIT_WIDTH)]
-            
+            # Update and draw agents, only keep agents that have not exited yet
+            agents = [
+                agent for agent in agents 
+                if not any(
+                    (agent.position.x > BOX_LEFT + BOX_WIDTH and
+                    exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
+                    or 
+                    (agent.position.x < BOX_LEFT and
+                    exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
+                    for exit in EXITS
+                )
+            ]
+
             # Exit if no more agents
             if agents == []:
                 running = False

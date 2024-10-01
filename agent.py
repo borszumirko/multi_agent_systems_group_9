@@ -5,7 +5,7 @@ from constants import (
     AGENT_MAX_FORCE,
     AGENT_MAX_SPEED,
     AGENT_RADIUS,
-    EXIT_POSITION,
+    EXITS,
     EXIT_WIDTH,
     AGENT_COLOR,
     AGENT_COUNT,
@@ -167,8 +167,17 @@ class Agent:
         # If on the side out from the rows, go down
         if  (BOX_LEFT <= self.position.x <= BOX_LEFT + 100 and self.position.y < BOX_TOP + BOX_HEIGHT - 200) or (BOX_LEFT + BOX_WIDTH - 100 <= self.position.x <= BOX_LEFT + BOX_WIDTH and self.position.y < BOX_TOP + BOX_HEIGHT - 200):
             target = pygame.Vector2(self.position.x, BOX_TOP + BOX_HEIGHT)
-        elif self.position.y >= BOX_TOP + BOX_HEIGHT - 200: # go towards exit
-            target = pygame.Vector2(EXIT_POSITION[0], EXIT_POSITION[1] + EXIT_WIDTH / 2)
+        elif self.position.y >= BOX_TOP + BOX_HEIGHT - 200:  # go towards exit
+            # Find the nearest exit
+            min_distance = float('inf')
+            target = None
+
+            for exit in EXITS:
+                exit_position = pygame.Vector2(exit["position"][0], exit["position"][1] + exit["width"] / 2)
+                distance_to_exit = self.position.distance_to(exit_position)
+                if distance_to_exit < min_distance:
+                    min_distance = distance_to_exit
+                    target = exit_position
         else: # go left or right from the desks
             if self.position.x - BOX_LEFT < BOX_LEFT + BOX_WIDTH - self.position.x:
                 x = BOX_LEFT
