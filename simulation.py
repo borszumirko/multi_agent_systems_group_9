@@ -152,7 +152,7 @@ class Simulation:
                 obstacle.draw(screen)
 
             # Update and draw agents
-            agents = [agent for agent in agents if agent.position.x <= BOX_LEFT + BOX_WIDTH or not (EXIT_POSITION[1] <= agent.position.y <= EXIT_POSITION[1] + EXIT_WIDTH)]
+            agents = [agent for agent in agents if agent.position.x <= BOX_LEFT + BOX_WIDTH - AGENT_RADIUS // 2 or not (EXIT_POSITION[1] + AGENT_RADIUS <= agent.position.y <= EXIT_POSITION[1] + EXIT_WIDTH - AGENT_RADIUS)]
             
             # Exit if no more agents
             if agents == []:
@@ -164,7 +164,11 @@ class Simulation:
             # Update positions of the agents
             for agent in agents:
                 agent.flock(np_agents, obstacles)
-                agent.update()
+                if len(agents) == 1:
+                    agent.update(True)
+                else:
+                    agent.update(False)
+                
             
             # Resolve any overlaps or boundary issues
             positions = [(agent.position.x, agent.position.y) for agent in agents]

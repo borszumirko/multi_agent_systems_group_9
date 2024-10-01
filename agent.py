@@ -42,18 +42,25 @@ class Agent:
         """
         self.acceleration += force
 
-    def update(self):
+    def update(self, debug):
         """
         Update boid's velocity and position.
         """
+
+        if self.acceleration.length() > self.max_force:
+                self.acceleration.scale_to_length(self.max_force)
         # panic influences change in velocity
-        # self.velocity = self.velocity * self.panic + self.acceleration * (1 - self.panic)
-        self.velocity += self.acceleration
+        self.velocity = self.velocity * self.panic + self.acceleration * (1 - self.panic)
+        # self.velocity += self.acceleration
         if self.velocity.length() > self.max_speed:
             self.velocity.scale_to_length(self.max_speed)
+        if debug:
+            print(self.position)
+            print(self.velocity)
+            print(self.acceleration)
         self.position += self.velocity
         self.acceleration *= 0
-    
+
     def flock(self, agents, obstacles):
         """
         Apply flocking behaviors with a bias towards the exit.
@@ -102,11 +109,9 @@ class Agent:
         if total > 0:
             steering /= total
             panic_component = 1 / self.max_speed * (steering.length() - self.velocity.length())
-            steering = steering.normalize() * self.max_speed
             steering -= self.velocity
             steering *= 1.5
-            if steering.length() > self.max_force:
-                steering.scale_to_length(self.max_force)
+            
         return steering, panic_component
 
     def cohere(self, agents):
@@ -128,12 +133,9 @@ class Agent:
             self.avg_panic_around = others_panic
             steering /= total
             steering -= self.position
-            if steering.length() > 0:
-                steering = steering.normalize() * self.max_speed
             steering -= self.velocity
             steering *= 1.5
-            if steering.length() > self.max_force:
-                steering.scale_to_length(self.max_force)
+        
         return steering
 
     def separate(self, agents):
@@ -152,12 +154,10 @@ class Agent:
                 total += 1
         if total > 0:
             steering /= total
-            if steering.length() > 0:
-                steering = steering.normalize() * self.max_speed
+            
             steering -= self.velocity
             steering *= 2.5
-            if steering.length() > self.max_force:
-                steering.scale_to_length(self.max_force)
+            
         return steering
 
     def steer_to_exit(self):
@@ -177,12 +177,10 @@ class Agent:
             target = pygame.Vector2(x, self.position.y)
         steering = target - self.position
         panic_component = 1 / ENV_LENGTH * (steering.length() - self.ease_distance)
-        if steering.length() > 0:
-            steering = steering.normalize() * self.max_speed
+        
         steering -= self.velocity
         steering *= 6.5
-        if steering.length() > self.max_force:
-            steering.scale_to_length(self.max_force)
+        
         return steering, panic_component
     
     def avoid_obstacles(self, obstacles):
@@ -198,11 +196,8 @@ class Agent:
                 total += 1
         if total > 0:
             steering /= total
-            if steering.length() > 0:
-                steering = steering.normalize() * self.max_speed
             steering *= 3.5
-            if steering.length() > self.max_force:
-                steering.scale_to_length(self.max_force)
+            
         return steering
 
     def draw(self, screen):
