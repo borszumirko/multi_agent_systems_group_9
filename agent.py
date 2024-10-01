@@ -42,7 +42,7 @@ class Agent:
         """
         self.acceleration += force
 
-    def update(self, debug):
+    def update(self):
         """
         Update boid's velocity and position.
         """
@@ -54,10 +54,6 @@ class Agent:
         # self.velocity += self.acceleration
         if self.velocity.length() > self.max_speed:
             self.velocity.scale_to_length(self.max_speed)
-        if debug:
-            print(self.position)
-            print(self.velocity)
-            print(self.acceleration)
         self.position += self.velocity
         self.acceleration *= 0
 

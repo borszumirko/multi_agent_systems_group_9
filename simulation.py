@@ -164,10 +164,7 @@ class Simulation:
             # Update positions of the agents
             for agent in agents:
                 agent.flock(np_agents, obstacles)
-                if len(agents) == 1:
-                    agent.update(True)
-                else:
-                    agent.update(False)
+                agent.update()
                 
             
             # Resolve any overlaps or boundary issues
