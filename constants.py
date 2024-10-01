@@ -7,6 +7,12 @@ EXIT_WIDTH = 75
 EXIT_POSITION = (BOX_LEFT + BOX_WIDTH, BOX_TOP + (BOX_HEIGHT // 2) - EXIT_WIDTH // 2 + 350)
 ENV_LENGTH = BOX_WIDTH
 
+# Clock Box dimensions
+CLOCK_BOX_WIDTH = 70
+CLOCK_BOX_HEIGHT = 40
+CLOCK_BOX_LEFT = (BOX_LEFT + BOX_WIDTH) + int((BOX_LEFT - CLOCK_BOX_WIDTH)/2)  # Right Box border + half of free space on the right side of the screen
+CLOCK_BOX_TOP = BOX_TOP
+
 # Agent constants
 AGENT_MAX_SPEED = 2
 AGENT_MAX_FORCE = 0.3

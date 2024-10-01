@@ -17,7 +17,12 @@ from constants import (EXIT_POSITION,
                        AGENT_RADIUS,
                        EXIT_COLOR,
                        BLACK,
-                       AGENT_COUNT)
+                       AGENT_COUNT,
+                       CLOCK_BOX_WIDTH,
+                       CLOCK_BOX_HEIGHT,
+                       CLOCK_BOX_LEFT,
+                       CLOCK_BOX_TOP
+                       )
 
 class Simulation:
     def __init__(self):
@@ -108,6 +113,7 @@ class Simulation:
         pygame.init()
         screen = pygame.display.set_mode((WIDTH, HEIGHT))
         clock = pygame.time.Clock()
+        start_ticks = pygame.time.get_ticks()
 
         # Agents start behind the desks
         starting_positions = []
@@ -133,6 +139,9 @@ class Simulation:
             
             # Exit
             pygame.draw.rect(screen, EXIT_COLOR, (*EXIT_POSITION, 15, EXIT_WIDTH))
+
+            # Clock
+            pygame.draw.rect(screen, BOX_COLOR, (CLOCK_BOX_LEFT, CLOCK_BOX_TOP, CLOCK_BOX_WIDTH, CLOCK_BOX_HEIGHT), 1)
             
             # Obstacles
             obstacles = []
@@ -169,8 +178,14 @@ class Simulation:
             for agent in agents:
                 agent.draw(screen)
 
+            # Clock update
+            elapsed_time_sec = (pygame.time.get_ticks()-start_ticks)/1000
+            time_text = pygame.font.Font(None, 36).render(f"{elapsed_time_sec:.2f}", True, (255, 255, 255))
+            screen.blit(time_text, (CLOCK_BOX_LEFT+5, CLOCK_BOX_TOP+8))
+
             pygame.display.flip()
-        
+
+            # Framerate set to maximum of 60 FPS
             clock.tick(60)
 
         pygame.quit()
