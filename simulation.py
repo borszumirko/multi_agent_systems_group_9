@@ -2,6 +2,7 @@ import numpy as np
 import pygame
 import random
 import math
+from metrics import Metrics
 
 from agent import Agent
 from obstacle import Obstacle
@@ -195,21 +196,6 @@ class Simulation:
 
             for obstacle in obstacles:
                 obstacle.draw(screen)
-
-            # Update and draw agents, only keep agents that have not exited yet
-            epsilon=2
-            agents = [
-                agent for agent in agents
-                if not any(
-                    (agent.position.x >= BOX_LEFT + BOX_WIDTH - epsilon and
-                    exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
-                    or
-                    (agent.position.x <= BOX_LEFT+epsilon and
-                    exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
-                    for exit in EXITS
-                )
-            ]
-
 
             # Epsilon for escape-easing
             epsilon=2
