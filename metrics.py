@@ -69,7 +69,12 @@ class Metrics:
         plt.legend()  # Add legend to show the mean value line
         plt.show()
 
-    def plot_average_panic_over_time(self):
+    def plot_average_panic_over_time(self, save_directory='plots'):
+        import os 
+
+        # Ensure the save directory exists
+        os.makedirs(save_directory, exist_ok=True)
+
         avg_panic_over_time = []
 
         for i in range(self.last_tick):
@@ -82,7 +87,9 @@ class Metrics:
         plt.plot(avg_panic_over_time, color='red')
         plt.xlabel('Tick')
         plt.ylabel('Average Panic Level')
-        plt.title('Average Panic Level Over Time')
+        #plt.title('Average Panic Level Over Time')
+        panic_over_time_path = os.path.join(save_directory, f'panic_over_time{CSV_FILE_NAME[:-4]}.png')
+        plt.savefig(panic_over_time_path, bbox_inches='tight')
         plt.show()
 
     def show_mean_panic_distribution(self):
@@ -136,6 +143,9 @@ def plot_boxplots_from_runs(csv_files, save_directory='plots'):
         escape_times = df['Ticks to Exit'].tolist()
         average_panic_levels = df['Average Panic Level'].tolist()
 
+        print(f"Mean escape Time for {csv_file}: {sum(escape_times)/len(escape_times)}")
+        print(f"Average Panic Level for {csv_file}: {sum(average_panic_levels)/len(average_panic_levels)}")
+
         # Append the data for boxplotting
         escape_times_runs.append(escape_times)
         average_panic_levels_runs.append(average_panic_levels)
@@ -143,10 +153,10 @@ def plot_boxplots_from_runs(csv_files, save_directory='plots'):
     # Plot and save the boxplot for escape times
     plt.figure(figsize=(12, 6))
     plt.boxplot(escape_times_runs, patch_artist=True)
-    plt.xlabel('Experiment-Run')
+    #plt.xlabel('Experiment-Run')
     plt.ylabel('Ticks to Exit')
     plt.title('Escape Times Distribution Across Runs')
-    plt.xticks(ticks=range(1, len(csv_files) + 1), labels=[f'Run {i+1}' for i in range(len(csv_files))])
+    plt.xticks(ticks=range(1, len(csv_files) + 1), labels=[f'Setup {i+1}' for i in range(len(csv_files))])
     plt.grid(True, linestyle='--', alpha=0.6)
     escape_plot_path = os.path.join(save_directory, 'escape_times_boxplot.png')
     plt.savefig(escape_plot_path, bbox_inches='tight')
@@ -155,10 +165,10 @@ def plot_boxplots_from_runs(csv_files, save_directory='plots'):
     # Plot and save the boxplot for average panic levels
     plt.figure(figsize=(12, 6))
     plt.boxplot(average_panic_levels_runs, patch_artist=True)
-    plt.xlabel('Experiment-Run')
+    #plt.xlabel('Experiments')
     plt.ylabel('Average Panic Level')
     plt.title('Average Panic Levels Across Runs')
-    plt.xticks(ticks=range(1, len(csv_files) + 1), labels=[f'Run {i+1}' for i in range(len(csv_files))])
+    plt.xticks(ticks=range(1, len(csv_files) + 1), labels=[f'Setup {i+1}' for i in range(len(csv_files))])
     plt.grid(True, linestyle='--', alpha=0.6)
     panic_plot_path = os.path.join(save_directory, 'average_panic_levels_boxplot.png')
     plt.savefig(panic_plot_path, bbox_inches='tight')

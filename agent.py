@@ -20,7 +20,7 @@ class Agent:
         self.position = pygame.Vector2(x, y)
         self.velocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
         self.acceleration = pygame.Vector2(0, 0)
-        self.max_speed = random.uniform(AGENT_MAX_SPEED * 0.3, AGENT_MAX_SPEED)
+        self.max_speed = random.uniform(AGENT_MAX_SPEED * 0.85, AGENT_MAX_SPEED)
         self.max_force = AGENT_MAX_FORCE
         self.avoid_distance = 2 * AGENT_RADIUS + 2
         self.cohesion_distance = 8 * AGENT_RADIUS

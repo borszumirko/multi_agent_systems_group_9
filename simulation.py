@@ -26,6 +26,7 @@ from constants import (EXITS,
 
 class Simulation:
     def __init__(self):
+        random.seed(42)
         self.total_agents = AGENT_COUNT
         self.frame_counter = 0
         self.metrics = Metrics(AGENT_COUNT)
