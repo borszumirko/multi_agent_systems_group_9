@@ -5,7 +5,7 @@ from constants import (
     AGENT_MAX_FORCE,
     AGENT_MAX_SPEED,
     AGENT_RADIUS,
-    EXIT_POSITION,
+    EXITS,
     EXIT_WIDTH,
     AGENT_COLOR,
     AGENT_COUNT,
@@ -46,14 +46,17 @@ class Agent:
         """
         Update boid's velocity and position.
         """
+
+        if self.acceleration.length() > self.max_force:
+                self.acceleration.scale_to_length(self.max_force)
         # panic influences change in velocity
-        # self.velocity = self.velocity * self.panic + self.acceleration * (1 - self.panic)
-        self.velocity += self.acceleration
+        self.velocity = self.velocity * self.panic + self.acceleration * (1 - self.panic)
+        # self.velocity += self.acceleration
         if self.velocity.length() > self.max_speed:
             self.velocity.scale_to_length(self.max_speed)
         self.position += self.velocity
         self.acceleration *= 0
-    
+
     def flock(self, agents, obstacles):
         """
         Apply flocking behaviors with a bias towards the exit.
@@ -65,7 +68,7 @@ class Agent:
         avoid_obstacles = self.avoid_obstacles(obstacles)
         
         new_panic = (align_panic + exit_panic) / 2
-        panic_update = (self.panic + new_panic) / 2
+        panic_update = min(1, (self.panic + new_panic) / 2)
         if panic_update >= 0:
             self.panic = panic_update
         else:
@@ -102,11 +105,9 @@ class Agent:
         if total > 0:
             steering /= total
             panic_component = 1 / self.max_speed * (steering.length() - self.velocity.length())
-            steering = steering.normalize() * self.max_speed
             steering -= self.velocity
             steering *= 1.5
-            if steering.length() > self.max_force:
-                steering.scale_to_length(self.max_force)
+            
         return steering, panic_component
 
     def cohere(self, agents):
@@ -128,12 +129,9 @@ class Agent:
             self.avg_panic_around = others_panic
             steering /= total
             steering -= self.position
-            if steering.length() > 0:
-                steering = steering.normalize() * self.max_speed
             steering -= self.velocity
             steering *= 1.5
-            if steering.length() > self.max_force:
-                steering.scale_to_length(self.max_force)
+        
         return steering
 
     def separate(self, agents):
@@ -152,12 +150,10 @@ class Agent:
                 total += 1
         if total > 0:
             steering /= total
-            if steering.length() > 0:
-                steering = steering.normalize() * self.max_speed
+            
             steering -= self.velocity
             steering *= 2.5
-            if steering.length() > self.max_force:
-                steering.scale_to_length(self.max_force)
+            
         return steering
 
     def steer_to_exit(self):
@@ -165,10 +161,19 @@ class Agent:
         Agents choose a subgoal based on their position and try to steer towards it
         '''
         # If on the side out from the rows, go down
-        if  (BOX_LEFT <= self.position.x <= BOX_LEFT + 100 and self.position.y < BOX_TOP + BOX_HEIGHT - 200) or (BOX_LEFT + BOX_WIDTH - 100 <= self.position.x <= BOX_LEFT + BOX_WIDTH and self.position.y < BOX_TOP + BOX_HEIGHT - 200):
+        if  (BOX_LEFT <= self.position.x <= BOX_LEFT + 100 - AGENT_RADIUS and self.position.y < BOX_TOP + BOX_HEIGHT - 200) or (BOX_LEFT + BOX_WIDTH - 100 + AGENT_RADIUS <= self.position.x <= BOX_LEFT + BOX_WIDTH and self.position.y < BOX_TOP + BOX_HEIGHT - 200):
             target = pygame.Vector2(self.position.x, BOX_TOP + BOX_HEIGHT)
-        elif self.position.y >= BOX_TOP + BOX_HEIGHT - 200: # go towards exit
-            target = pygame.Vector2(EXIT_POSITION[0], EXIT_POSITION[1] + EXIT_WIDTH / 2)
+        elif self.position.y >= BOX_TOP + BOX_HEIGHT - 200:  # go towards exit
+            # Find the nearest exit
+            min_distance = float('inf')
+            target = None
+
+            for exit in EXITS:
+                exit_position = pygame.Vector2(exit["position"][0], exit["position"][1] + exit["width"] / 2)
+                distance_to_exit = self.position.distance_to(exit_position)
+                if distance_to_exit < min_distance:
+                    min_distance = distance_to_exit
+                    target = exit_position
         else: # go left or right from the desks
             if self.position.x - BOX_LEFT < BOX_LEFT + BOX_WIDTH - self.position.x:
                 x = BOX_LEFT
@@ -177,12 +182,10 @@ class Agent:
             target = pygame.Vector2(x, self.position.y)
         steering = target - self.position
         panic_component = 1 / ENV_LENGTH * (steering.length() - self.ease_distance)
-        if steering.length() > 0:
-            steering = steering.normalize() * self.max_speed
+        
         steering -= self.velocity
         steering *= 6.5
-        if steering.length() > self.max_force:
-            steering.scale_to_length(self.max_force)
+        
         return steering, panic_component
     
     def avoid_obstacles(self, obstacles):
@@ -198,11 +201,8 @@ class Agent:
                 total += 1
         if total > 0:
             steering /= total
-            if steering.length() > 0:
-                steering = steering.normalize() * self.max_speed
             steering *= 3.5
-            if steering.length() > self.max_force:
-                steering.scale_to_length(self.max_force)
+            
         return steering
 
     def draw(self, screen):
