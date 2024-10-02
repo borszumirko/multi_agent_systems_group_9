@@ -22,3 +22,7 @@ __pycache__/
 profile.prof
 profile.svg
 profiling_stats*
+
+# Folders
+runs/
+plots/

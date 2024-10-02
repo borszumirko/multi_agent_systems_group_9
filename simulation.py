@@ -188,7 +188,6 @@ class Simulation:
             # Clock
             pygame.draw.rect(screen, BOX_COLOR, (CLOCK_BOX_LEFT, CLOCK_BOX_TOP, CLOCK_BOX_WIDTH, CLOCK_BOX_HEIGHT), 1)
 
-            
             # Obstacles
             obstacles = []
             for i in range(10):
@@ -244,7 +243,6 @@ class Simulation:
             # Update panic levels in the Metrics class (for all active Agents)
             self.metrics.update_panic_levels(agents)
 
-
             # Resolve any overlaps or boundary issues
             positions = [(agent.position.x, agent.position.y) for agent in agents]
             resolved_positions = self.resolve_positions(positions, AGENT_RADIUS, BOX_WIDTH, BOX_HEIGHT, BOX_LEFT, BOX_TOP, obstacles)
@@ -273,6 +271,7 @@ class Simulation:
         pygame.quit()
 
         self.metrics.show_tick_distribution()
-        self.metrics.show_panic_distribution()
+        self.metrics.show_mean_panic_distribution()
         self.metrics.plot_average_panic_over_time()
+        self.metrics.save_metrics()
 

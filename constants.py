@@ -1,14 +1,14 @@
 # Env constants
+CSV_FILE_NAME = "experiment_75_1_slow.csv"
 WIDTH, HEIGHT = 1500, 1000
 BOX_WIDTH, BOX_HEIGHT = 1200, 900
 BOX_LEFT = (WIDTH - BOX_WIDTH) // 2
 BOX_TOP = (HEIGHT - BOX_HEIGHT) // 2
 EXIT_WIDTH = 75
-EXIT_POSITION = (BOX_LEFT + BOX_WIDTH, BOX_TOP + (BOX_HEIGHT // 2) - EXIT_WIDTH // 2 + 350)
 ENV_LENGTH = BOX_WIDTH
 EXITS = [
     {"position": (BOX_LEFT + BOX_WIDTH, BOX_TOP + (BOX_HEIGHT // 2) - EXIT_WIDTH // 2 + 350), "width": EXIT_WIDTH},
-    {"position": (BOX_LEFT - 15, BOX_TOP + (BOX_HEIGHT // 2) - EXIT_WIDTH // 2 + 350), "width": EXIT_WIDTH},
+    #{"position": (BOX_LEFT - 15, BOX_TOP + (BOX_HEIGHT // 2) - EXIT_WIDTH // 2 + 350), "width": EXIT_WIDTH},
     # Add more exits as needed
 ]
 
