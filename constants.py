@@ -11,9 +11,15 @@ EXITS = [
     # Add more exits as needed
 ]
 
+# Clock Box dimensions
+CLOCK_BOX_WIDTH = 70
+CLOCK_BOX_HEIGHT = 40
+CLOCK_BOX_LEFT = (BOX_LEFT + BOX_WIDTH) + int((BOX_LEFT - CLOCK_BOX_WIDTH)/2)  # Right Box border + half of free space on the right side of the screen
+CLOCK_BOX_TOP = BOX_TOP
+
 # Agent constants
 AGENT_MAX_SPEED = 2
-AGENT_MAX_FORCE = 0.3
+AGENT_MAX_FORCE = 5
 AGENT_PERCEPTION = 4
 AGENT_RADIUS = 15
 AGENT_COUNT = 150
