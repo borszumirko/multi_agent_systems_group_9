@@ -63,11 +63,11 @@ class Agent:
         """
         alignment, align_panic = self.align(agents)
         cohesion = self.cohere(agents)
-        separation = self.separate(agents)
+        separation, physical_panic = self.separate(agents)
         exit_steering, exit_panic = self.steer_to_exit()
         avoid_obstacles = self.avoid_obstacles(obstacles)
         
-        new_panic = (align_panic + exit_panic) / 2
+        new_panic = (align_panic + exit_panic + physical_panic) / 3
         panic_update = min(1, (self.panic + new_panic) / 2)
         if panic_update >= 0:
             self.panic = panic_update
@@ -136,11 +136,12 @@ class Agent:
 
     def separate(self, agents):
         '''
-        Agent try to sep[arate themself from nearby agents within
+        Agent try to separate themself from nearby agents within
         self.avoid_distance
         '''
         total = 0
         steering = pygame.Vector2(0, 0)
+        panic_component = 0
         for other in agents:
             distance = self.distances[other.id]
             if other != self and distance < self.avoid_distance and distance != -1:
@@ -150,11 +151,14 @@ class Agent:
                 total += 1
         if total > 0:
             steering /= total
-            
             steering -= self.velocity
             steering *= 2.5
+
+            # Panic calculation (6)
+            # /4 instead of /len(agents), since avoid_distance is so small
+            panic_component = total / 4
             
-        return steering
+        return steering, panic_component
 
     def steer_to_exit(self):
         '''
