@@ -27,11 +27,13 @@ class Simulation:
     def __init__(self):
         self.total_agents = AGENT_COUNT
         self.frame_counter = 0
+        self.metrics = Metrics(AGENT_COUNT)
 
     def resolve_positions(self, positions, radius, box_width, box_height, box_left, box_top, obstacles):
         '''
         Ensures that agents don't overlap and stay within the box
         '''
+
         positions = np.array(positions)
         n_agents = len(positions)
 
@@ -73,13 +75,14 @@ class Simulation:
                             y = obstacle.top + obstacle.height + radius
 
             positions[i] = np.array([x, y])
+        
 
         # Resolve overlaps between agents
         for i in range(n_agents):
             for j in range(i + 1, n_agents):
                 pos_i = positions[i]
                 pos_j = positions[j]
-                
+
                 # If too far, don't calculate norm
                 if abs(pos_i[0] - pos_j[0]) > AGENT_RADIUS * 2 or abs(pos_i[1] - pos_j[1]) > AGENT_RADIUS * 2:
                     continue
@@ -196,17 +199,47 @@ class Simulation:
             # Update and draw agents, only keep agents that have not exited yet
             epsilon=2
             agents = [
-                agent for agent in agents 
+                agent for agent in agents
                 if not any(
                     (agent.position.x >= BOX_LEFT + BOX_WIDTH - epsilon and
                     exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
-                    or 
+                    or
                     (agent.position.x <= BOX_LEFT+epsilon and
                     exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
                     for exit in EXITS
                 )
             ]
 
+
+            # Epsilon for escape-easing
+            epsilon=2
+
+            # Dropped out agents:
+            dropped_out_agents = [
+                agent for agent in agents
+                if any(
+                    (agent.position.x >= BOX_LEFT + BOX_WIDTH - epsilon and
+                    exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
+                    or
+                    (agent.position.x <= BOX_LEFT+epsilon and
+                    exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
+                    for exit in EXITS
+                )
+            ]
+            self.metrics.record_agent_escape(dropped_out_agents)
+
+            # Update and draw agents, only keep agents that have not exited yet
+            agents = [
+                agent for agent in agents
+                if not any(
+                    (agent.position.x >= BOX_LEFT + BOX_WIDTH - epsilon and
+                    exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
+                    or
+                    (agent.position.x <= BOX_LEFT+epsilon and
+                    exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
+                    for exit in EXITS
+                )
+            ]
 
             # Exit if no more agents
             if agents == []:
@@ -219,8 +252,13 @@ class Simulation:
             for agent in agents:
                 agent.flock(np_agents, obstacles)
                 agent.update()
-                
-            
+
+            # Update all active Agents time-steps
+            self.metrics.increment_tick()
+            # Update panic levels in the Metrics class (for all active Agents)
+            self.metrics.update_panic_levels(agents)
+
+
             # Resolve any overlaps or boundary issues
             positions = [(agent.position.x, agent.position.y) for agent in agents]
             resolved_positions = self.resolve_positions(positions, AGENT_RADIUS, BOX_WIDTH, BOX_HEIGHT, BOX_LEFT, BOX_TOP, obstacles)
@@ -247,4 +285,8 @@ class Simulation:
             clock.tick(60)
 
         pygame.quit()
+
+        self.metrics.show_tick_distribution()
+        self.metrics.show_panic_distribution()
+        self.metrics.plot_average_panic_over_time()
 
