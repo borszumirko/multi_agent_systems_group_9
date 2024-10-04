@@ -150,8 +150,7 @@ class Agent:
                 total += 1
         if total > 0:
             steering /= total
-            
-            steering -= self.velocity
+            # steering -= self.velocity
             steering *= 2.5
             
         return steering
