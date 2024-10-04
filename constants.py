@@ -1,9 +1,10 @@
 # Env constants
+CSV_FILE_NAME = "Experiment_3.csv"
 WIDTH, HEIGHT = 1500, 1000
 BOX_WIDTH, BOX_HEIGHT = 1200, 900
 BOX_LEFT = (WIDTH - BOX_WIDTH) // 2
 BOX_TOP = (HEIGHT - BOX_HEIGHT) // 2
-EXIT_WIDTH = 75
+EXIT_WIDTH = 35
 ENV_LENGTH = BOX_WIDTH
 EXITS = [
     {"position": (BOX_LEFT + BOX_WIDTH, BOX_TOP + (BOX_HEIGHT // 2) - EXIT_WIDTH // 2 + 350), "width": EXIT_WIDTH},
@@ -12,8 +13,8 @@ EXITS = [
 ]
 
 # Clock Box dimensions
-CLOCK_BOX_WIDTH = 70
-CLOCK_BOX_HEIGHT = 40
+CLOCK_BOX_WIDTH = 120
+CLOCK_BOX_HEIGHT = 56
 CLOCK_BOX_LEFT = (BOX_LEFT + BOX_WIDTH) + int((BOX_LEFT - CLOCK_BOX_WIDTH)/2)  # Right Box border + half of free space on the right side of the screen
 CLOCK_BOX_TOP = BOX_TOP
 
