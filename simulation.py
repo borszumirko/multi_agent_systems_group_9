@@ -119,27 +119,27 @@ class Simulation:
 
 
 
-    def record_distances(self, boids):
+    def record_distances(self, agents):
         '''
         Records distances of other agents within every agent's perception so they don't
-        have to be recaluculated when trying to execute the bois behavours
+        have to be recaluculated when trying to execute the boids behaviours
         '''
 
-        count = len(boids)
+        count = len(agents)
         for i in range(count):
-            boids[i].distances = np.full(AGENT_COUNT, fill_value=-1)
+            agents[i].distances = np.full(AGENT_COUNT, fill_value=-1)
             for j in range(i+1, count):
-                boid_x = boids[i].position.x
-                boid_y = boids[i].position.y
-                other_x = boids[j].position.x
-                other_y = boids[j].position.y
+                agent_x = agents[i].position.x
+                agent_y = agents[i].position.y
+                other_x = agents[j].position.x
+                other_y = agents[j].position.y
                 # If too far, don't calculate norm
-                if abs(boid_x - other_x) > boids[i].perception or abs(boid_y - other_y) > boids[i].perception:
+                if abs(agent_x - other_x) > agents[i].perception or abs(agent_y - other_y) > agents[i].perception:
                     continue
-                distance = math.dist((boid_x, boid_y),  (other_x, other_y))
+                distance = math.dist((agent_x, agent_y),  (other_x, other_y))
                 
-                boids[i].distances[boids[j].id] = distance
-                boids[j].distances[boids[i].id] = distance
+                agents[i].distances[agents[j].id] = distance
+                agents[j].distances[agents[i].id] = distance
 
 
     def main_loop(self):
