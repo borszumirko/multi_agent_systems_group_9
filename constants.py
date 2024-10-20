@@ -31,3 +31,30 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 BOX_COLOR = (208, 187, 48)
 EXIT_COLOR = (202, 174, 152)
+
+
+# Obstacles -> TODO: No single source of truth and not dynamic (Are hardcoded in the simulation) 
+y_min = 100000
+y_max = 0
+for i in range(10):
+    center = (BOX_LEFT + 100 + (1000 // 2), BOX_TOP + (i+1) * 60 + 50 + 20 // 2)
+    if center[1] + 10 > y_max:
+        y_max = center[1] + 10
+    if center[1] - 10 < y_min:
+        y_min = center[1] - 10
+        print(y_min)
+
+obstacle_zone_y_span = y_max - y_min
+# Subgoal Zones
+SUBGOAL_N = 2
+SUBGOAL_ZONES = {
+    0:[
+        {"position": (BOX_LEFT + 50, obstacle_zone_y_span//2 + y_min), "w": 100, "h": obstacle_zone_y_span+150},
+        {"position": (BOX_LEFT + 1150, obstacle_zone_y_span//2 + y_min), "w": 100, "h": obstacle_zone_y_span+150}
+    ],
+    1:[
+        # The pre-goal-zone is wide as the whole calssroom
+        # It is as high as the exit itself plus 50 pixels (So it embedds the exit)
+        {"position":(WIDTH//2, ex["position"][1]), "w":BOX_WIDTH, "h":EXIT_WIDTH + 100} for ex in EXITS 
+    ],
+}

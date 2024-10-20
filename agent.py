@@ -1,6 +1,7 @@
 import pygame
 import random
 import numpy as np
+from subgoals import find_subgoal
 from constants import (
     AGENT_MAX_FORCE,
     AGENT_MAX_SPEED,
@@ -13,8 +14,10 @@ from constants import (
     BOX_LEFT,
     BOX_HEIGHT,
     BOX_TOP,
-    BOX_WIDTH
+    BOX_WIDTH,
+    SUBGOAL_N
 )
+
 class Agent:
     def __init__(self, x, y, id):
         self.position = pygame.Vector2(x, y)
@@ -35,6 +38,8 @@ class Agent:
         self.physical_discomfort = 0
         self.avg_panic_around = 0
 
+        # Subgoal counter
+        self.subgoal_indicator = 0
     
     def apply_force(self, force):
         """
@@ -164,10 +169,7 @@ class Agent:
         '''
         Agents choose a subgoal based on their position and try to steer towards it
         '''
-        # If on the side out from the rows, go down
-        if  (BOX_LEFT <= self.position.x <= BOX_LEFT + 100 - AGENT_RADIUS and self.position.y < BOX_TOP + BOX_HEIGHT - 200) or (BOX_LEFT + BOX_WIDTH - 100 + AGENT_RADIUS <= self.position.x <= BOX_LEFT + BOX_WIDTH and self.position.y < BOX_TOP + BOX_HEIGHT - 200):
-            target = pygame.Vector2(self.position.x, BOX_TOP + BOX_HEIGHT)
-        elif self.position.y >= BOX_TOP + BOX_HEIGHT - 200:  # go towards exit
+        if self.subgoal_indicator >= SUBGOAL_N:
             # Find the nearest exit
             min_distance = float('inf')
             target = None
@@ -178,12 +180,10 @@ class Agent:
                 if distance_to_exit < min_distance:
                     min_distance = distance_to_exit
                     target = exit_position
-        else: # go left or right from the desks
-            if self.position.x - BOX_LEFT < BOX_LEFT + BOX_WIDTH - self.position.x:
-                x = BOX_LEFT
-            else:
-                x = BOX_LEFT + BOX_WIDTH                                              
-            target = pygame.Vector2(x, self.position.y)
+        else:
+            target, in_goal =  find_subgoal(self.subgoal_indicator, self.position)
+            if in_goal:
+                self.subgoal_indicator += 1
         steering = target - self.position
         panic_component = 1 / ENV_LENGTH * (steering.length() - self.ease_distance)
         
