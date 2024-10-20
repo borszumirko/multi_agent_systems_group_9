@@ -62,8 +62,8 @@ class Agent:
         Apply flocking behaviors with a bias towards the exit.
         """
         alignment, align_panic = self.align(agents)
-        cohesion = self.cohere(agents)
-        separation, physical_panic = self.separate(agents)
+        cohesion, physical_panic = self.cohere(agents)
+        separation = self.separate(agents)
         exit_steering, exit_panic = self.steer_to_exit()
         avoid_obstacles = self.avoid_obstacles(obstacles)
         
@@ -118,6 +118,7 @@ class Agent:
         total = 0
         steering = pygame.Vector2(0, 0)
         others_panic = 0
+        panic_component = 0
         for other in agents:
             distance = self.distances[other.id]
             if other != self and distance < self.cohesion_distance and distance != -1:
@@ -131,8 +132,12 @@ class Agent:
             steering -= self.position
             steering -= self.velocity
             steering *= 1.5
+
+            # /45 instead of /len(agents), since we have more agents than in the paper.
+            # 45 is the maximum number of other agents close by, given the cohesion_distance
+            panic_component = total / (45)
         
-        return steering
+        return steering, panic_component
 
     def separate(self, agents):
         '''
@@ -141,7 +146,6 @@ class Agent:
         '''
         total = 0
         steering = pygame.Vector2(0, 0)
-        panic_component = 0
         for other in agents:
             distance = self.distances[other.id]
             if other != self and distance < self.avoid_distance and distance != -1:
@@ -153,12 +157,8 @@ class Agent:
             steering /= total
             steering -= self.velocity
             steering *= 2.5
-
-            # Panic calculation (6)
-            # /4 instead of /len(agents), since avoid_distance is so small
-            panic_component = total / 4
             
-        return steering, panic_component
+        return steering
 
     def steer_to_exit(self):
         '''
