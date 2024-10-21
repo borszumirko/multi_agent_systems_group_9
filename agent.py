@@ -123,8 +123,8 @@ class Agent:
         panic_component = 0
         for other in agents:
             distance = self.distances[other.id]
-            if other != self and distance < AGENT_RADIUS * 2.1 and distance != -1:
-                close_neighbors += 1
+            # if other != self and distance < AGENT_RADIUS * 2.1 and distance != -1:
+            #     close_neighbors += 1
             if other != self and distance < self.cohesion_distance and distance != -1:
                 steering += other.position
                 others_panic += other.panic
@@ -140,8 +140,8 @@ class Agent:
 
             # /45 instead of /len(agents), since we have more agents than in the paper.
             # 45 is the maximum number of other agents close by, given the cohesion_distance
-            # panic_component = total / (45)
-            panic_component = close_neighbors / 6
+            panic_component = total / (45)
+            # panic_component = close_neighbors / 6
         
         return steering, panic_component
 
