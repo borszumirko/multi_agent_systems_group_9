@@ -15,6 +15,7 @@ from constants import (EXITS,
                        BOX_WIDTH,
                        BOX_COLOR,
                        AGENT_RADIUS,
+                       AGENT_MAX_SPEED,
                        EXIT_COLOR,
                        BLACK,
                        AGENT_COUNT,
@@ -76,7 +77,18 @@ class Simulation:
                         elif y > obstacle.top + obstacle.height:
                             y = obstacle.top + obstacle.height + radius
 
-            positions[i] = np.array([x, y])
+            # resolve_positions is not allowed to make an arbitrary size displacement to the agents
+            old_pos = positions[i]
+            new_pos = np.array([x, y])
+            diff = new_pos - old_pos
+            # squared_diff = diff ** 2
+            # length = np.sum(squared_diff)
+            length = np.linalg.norm(diff)
+            max_displacement = AGENT_MAX_SPEED // 2
+            if length > (max_displacement):
+                new_pos = (diff/length*max_displacement) + old_pos
+            
+            positions[i] = new_pos
         
 
         # Resolve overlaps between agents
@@ -247,7 +259,7 @@ class Simulation:
             # Resolve any overlaps or boundary issues
             positions = [(agent.position.x, agent.position.y) for agent in agents]
             resolved_positions = self.resolve_positions(positions, AGENT_RADIUS, BOX_WIDTH, BOX_HEIGHT, BOX_LEFT, BOX_TOP, obstacles)
-            
+            # resolved_positions = positions
             # Update boid positions after resolving
             for i, agent in enumerate(agents):
                 agent.position.x, agent.position.y = resolved_positions[i]
@@ -271,8 +283,8 @@ class Simulation:
 
         pygame.quit()
 
-        self.metrics.show_tick_distribution()
-        self.metrics.show_mean_panic_distribution()
-        self.metrics.plot_average_panic_over_time()
-        self.metrics.save_metrics()
+        # self.metrics.show_tick_distribution()
+        # self.metrics.show_mean_panic_distribution()
+        # self.metrics.plot_average_panic_over_time()
+        # self.metrics.save_metrics()
 

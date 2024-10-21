@@ -22,7 +22,7 @@ class Agent:
         self.acceleration = pygame.Vector2(0, 0)
         self.max_speed = random.uniform(AGENT_MAX_SPEED * 0.85, AGENT_MAX_SPEED)
         self.max_force = AGENT_MAX_FORCE
-        self.avoid_distance = 2 * AGENT_RADIUS + 2
+        self.avoid_distance = 5 * AGENT_RADIUS
         self.cohesion_distance = 8 * AGENT_RADIUS
         self.alignment_distance = 4 * AGENT_RADIUS
         self.perception = max(self.avoid_distance, self.alignment_distance, self.cohesion_distance) # perception required for the record distances function
@@ -51,9 +51,9 @@ class Agent:
                 self.acceleration.scale_to_length(self.max_force)
         # panic influences change in velocity
         self.velocity = self.velocity * self.panic + self.acceleration * (1 - self.panic)
-        # self.velocity += self.acceleration
         if self.velocity.length() > self.max_speed:
             self.velocity.scale_to_length(self.max_speed)
+            
         self.position += self.velocity
         self.acceleration *= 0
 
@@ -87,7 +87,7 @@ class Agent:
         self.apply_force(separation)
         self.apply_force(exit_steering)
         self.apply_force(avoid_obstacles)
-    
+        
 
     def align(self, agents):
         '''
@@ -106,6 +106,7 @@ class Agent:
             steering /= total
             panic_component = 1 / self.max_speed * (steering.length() - self.velocity.length())
             steering -= self.velocity
+            steering = steering.normalize()
             steering *= 1.5
             
         return steering, panic_component
@@ -116,11 +117,14 @@ class Agent:
         self.cohesion_distance
         '''
         total = 0
+        close_neighbors = 0
         steering = pygame.Vector2(0, 0)
         others_panic = 0
         panic_component = 0
         for other in agents:
             distance = self.distances[other.id]
+            if other != self and distance < AGENT_RADIUS * 2.1 and distance != -1:
+                close_neighbors += 1
             if other != self and distance < self.cohesion_distance and distance != -1:
                 steering += other.position
                 others_panic += other.panic
@@ -131,11 +135,13 @@ class Agent:
             steering /= total
             steering -= self.position
             steering -= self.velocity
+            steering = steering.normalize()
             steering *= 1.5
 
             # /45 instead of /len(agents), since we have more agents than in the paper.
             # 45 is the maximum number of other agents close by, given the cohesion_distance
-            panic_component = total / (45)
+            # panic_component = total / (45)
+            panic_component = close_neighbors / 6
         
         return steering, panic_component
 
@@ -156,6 +162,7 @@ class Agent:
         if total > 0:
             steering /= total
             steering -= self.velocity
+            steering = steering.normalize()
             steering *= 2.5
             
         return steering
@@ -188,6 +195,7 @@ class Agent:
         panic_component = 1 / ENV_LENGTH * (steering.length() - self.ease_distance)
         
         steering -= self.velocity
+        steering = steering.normalize()
         steering *= 6.5
         
         return steering, panic_component
@@ -205,6 +213,8 @@ class Agent:
                 total += 1
         if total > 0:
             steering /= total
+            steering -= self.velocity
+            steering = steering.normalize()
             steering *= 3.5
             
         return steering
