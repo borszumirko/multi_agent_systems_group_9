@@ -22,7 +22,7 @@ class Agent:
         self.acceleration = pygame.Vector2(0, 0)
         self.max_speed = random.uniform(AGENT_MAX_SPEED * 0.85, AGENT_MAX_SPEED)
         self.max_force = AGENT_MAX_FORCE
-        self.avoid_distance = 5 * AGENT_RADIUS
+        self.avoid_distance = 2 * AGENT_RADIUS + 2
         self.cohesion_distance = 8 * AGENT_RADIUS
         self.alignment_distance = 4 * AGENT_RADIUS
         self.perception = max(self.avoid_distance, self.alignment_distance, self.cohesion_distance) # perception required for the record distances function
