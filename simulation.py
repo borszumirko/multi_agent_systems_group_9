@@ -29,6 +29,7 @@ from constants import (EXITS,
                        BIG_OBSTACLE_H, 
                        BIG_OBSTACLE_W,
                        CSV_FILE_NAME,
+                       SCALING
                        )
 
 class Simulation:
@@ -226,7 +227,7 @@ class Simulation:
             obstacles = []
             for i in range(15):
                 obstacles.append(Obstacle(BOX_LEFT + 75 + (i) * OBSTACLE_WIDTH * 2, BOX_TOP + CORR_WIDTH, OBSTACLE_WIDTH, OBSTACLE_HEIGHT))
-            obstacles.append(Obstacle(BOX_LEFT + ((1250+450+90) // 1.5), BOX_TOP + CORR_WIDTH + (55//1.5), BIG_OBSTACLE_W, BIG_OBSTACLE_H))
+            obstacles.append(Obstacle(BOX_LEFT + ((1250+450+90) // SCALING), BOX_TOP + CORR_WIDTH + (55//SCALING), BIG_OBSTACLE_W, BIG_OBSTACLE_H))
             
             for obstacle in obstacles:
                 obstacle.draw(screen)
