@@ -150,7 +150,10 @@ class Simulation:
 
         count = len(agents)
         for i in range(count):
+            # Empty distances, in the case one agent is out via the exit.
             agents[i].distances = np.full(AGENT_COUNT, fill_value=-1)
+
+        for i in range(count):
             for j in range(i+1, count):
                 agent_x = agents[i].position.x
                 agent_y = agents[i].position.y
