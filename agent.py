@@ -3,7 +3,7 @@ import random
 import numpy as np
 from constants import (
     AGENT_MAX_FORCE,
-    AGENT_MAX_SPEED,
+    AGENT_AVG_SPEED,
     AGENT_RADIUS,
     EXITS,
     EXIT_WIDTH,
@@ -13,14 +13,25 @@ from constants import (
     BOX_LEFT,
     BOX_HEIGHT,
     BOX_TOP,
-    BOX_WIDTH
+    BOX_WIDTH,
+    CORR_WIDTH,
+    OBSTACLE_HEIGHT,
+    AGENT_SPEED_SIGMA
 )
+
+def normalize_non_zero(vector):
+    null_vec = pygame.Vector2(0, 0)
+    if vector != null_vec:
+        return vector.normalize()
+    else:
+        return null_vec
+
 class Agent:
     def __init__(self, x, y, id):
         self.position = pygame.Vector2(x, y)
         self.velocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
         self.acceleration = pygame.Vector2(0, 0)
-        self.max_speed = random.uniform(AGENT_MAX_SPEED * 0.85, AGENT_MAX_SPEED)
+        self.max_speed = np.clip(np.random.normal(AGENT_AVG_SPEED, AGENT_SPEED_SIGMA), AGENT_AVG_SPEED-AGENT_SPEED_SIGMA, AGENT_AVG_SPEED+AGENT_SPEED_SIGMA)
         self.max_force = AGENT_MAX_FORCE
         self.avoid_distance = 2 * AGENT_RADIUS + 2
         self.cohesion_distance = 8 * AGENT_RADIUS
@@ -34,6 +45,7 @@ class Agent:
         self.ease_distance = AGENT_RADIUS * 10
         self.physical_discomfort = 0
         self.avg_panic_around = 0
+        self.in_exit_area = False
 
     
     def apply_force(self, force):
@@ -53,18 +65,19 @@ class Agent:
         self.velocity = self.velocity * self.panic + self.acceleration * (1 - self.panic)
         if self.velocity.length() > self.max_speed:
             self.velocity.scale_to_length(self.max_speed)
+            self.color = (0, 0, 255)
             
         self.position += self.velocity
         self.acceleration *= 0
 
-    def flock(self, agents, obstacles):
+    def flock(self, agents, obstacles, zones):
         """
         Apply flocking behaviors with a bias towards the exit.
         """
         alignment, align_panic = self.align(agents)
         cohesion, physical_panic = self.cohere(agents)
         separation = self.separate(agents)
-        exit_steering, exit_panic = self.steer_to_exit()
+        exit_steering, exit_panic = self.steer_to_exit(zones)
         avoid_obstacles = self.avoid_obstacles(obstacles)
         
         new_panic = (align_panic + exit_panic + physical_panic) / 3
@@ -106,7 +119,7 @@ class Agent:
             steering /= total
             panic_component = 1 / self.max_speed * (steering.length() - self.velocity.length())
             steering -= self.velocity
-            steering = steering.normalize()
+            steering = normalize_non_zero(steering)
             steering *= 1.5
             
         return steering, panic_component
@@ -123,8 +136,6 @@ class Agent:
         panic_component = 0
         for other in agents:
             distance = self.distances[other.id]
-            # if other != self and distance < AGENT_RADIUS * 2.1 and distance != -1:
-            #     close_neighbors += 1
             if other != self and distance < self.cohesion_distance and distance != -1:
                 steering += other.position
                 others_panic += other.panic
@@ -135,13 +146,12 @@ class Agent:
             steering /= total
             steering -= self.position
             steering -= self.velocity
-            steering = steering.normalize()
+            steering = normalize_non_zero(steering)
             steering *= 1.5
 
             # /45 instead of /len(agents), since we have more agents than in the paper.
             # 45 is the maximum number of other agents close by, given the cohesion_distance
             panic_component = total / (45)
-            # panic_component = close_neighbors / 6
         
         return steering, panic_component
 
@@ -162,40 +172,41 @@ class Agent:
         if total > 0:
             steering /= total
             steering -= self.velocity
-            steering = steering.normalize()
+            steering = normalize_non_zero(steering)
             steering *= 2.5
             
         return steering
 
-    def steer_to_exit(self):
+    def steer_to_exit(self, zones):
         '''
         Agents choose a subgoal based on their position and try to steer towards it
         '''
-        # If on the side out from the rows, go down
-        if  (BOX_LEFT <= self.position.x <= BOX_LEFT + 100 - AGENT_RADIUS and self.position.y < BOX_TOP + BOX_HEIGHT - 200) or (BOX_LEFT + BOX_WIDTH - 100 + AGENT_RADIUS <= self.position.x <= BOX_LEFT + BOX_WIDTH and self.position.y < BOX_TOP + BOX_HEIGHT - 200):
-            target = pygame.Vector2(self.position.x, BOX_TOP + BOX_HEIGHT)
-        elif self.position.y >= BOX_TOP + BOX_HEIGHT - 200:  # go towards exit
-            # Find the nearest exit
+
+        if zones['middle'].is_in(self.position):
+            if self.position.y > BOX_TOP + (BOX_HEIGHT // 2):
+                target = pygame.Vector2(self.position.x, BOX_TOP + BOX_HEIGHT - (CORR_WIDTH // 2)) # up
+            else:
+                target = pygame.Vector2(self.position.x, BOX_TOP + (CORR_WIDTH // 2)) # down
+        elif zones['top'].is_in(self.position):
+            target = pygame.Vector2(BOX_LEFT + BOX_WIDTH, BOX_TOP + (CORR_WIDTH // 2)) # right frm top
+        elif zones['bottom'].is_in(self.position):
+            target = pygame.Vector2(BOX_LEFT + BOX_WIDTH, BOX_TOP + BOX_HEIGHT - (CORR_WIDTH // 2)) # right from bottom
+        elif zones['right'].is_in(self.position): # go towards nearest exit
             min_distance = float('inf')
             target = None
-
             for exit in EXITS:
-                exit_position = pygame.Vector2(exit["position"][0], exit["position"][1] + exit["width"] / 2)
+                # Find the nearest exit
+                exit_position = pygame.Vector2(exit["position"][0]+ exit["width"] / 2, exit["position"][1]+ exit["height"] / 2)
                 distance_to_exit = self.position.distance_to(exit_position)
                 if distance_to_exit < min_distance:
                     min_distance = distance_to_exit
                     target = exit_position
-        else: # go left or right from the desks
-            if self.position.x - BOX_LEFT < BOX_LEFT + BOX_WIDTH - self.position.x:
-                x = BOX_LEFT
-            else:
-                x = BOX_LEFT + BOX_WIDTH                                              
-            target = pygame.Vector2(x, self.position.y)
+
         steering = target - self.position
         panic_component = 1 / ENV_LENGTH * (steering.length() - self.ease_distance)
         
         steering -= self.velocity
-        steering = steering.normalize()
+        steering = normalize_non_zero(steering)
         steering *= 6.5
         
         return steering, panic_component
@@ -214,7 +225,7 @@ class Agent:
         if total > 0:
             steering /= total
             steering -= self.velocity
-            steering = steering.normalize()
+            steering = normalize_non_zero(steering)
             steering *= 3.5
             
         return steering

@@ -3,7 +3,7 @@ import pygame
 import random
 import math
 from metrics import Metrics
-
+import pandas as pd
 from agent import Agent
 from obstacle import Obstacle
 from constants import (EXITS,
@@ -15,14 +15,20 @@ from constants import (EXITS,
                        BOX_WIDTH,
                        BOX_COLOR,
                        AGENT_RADIUS,
-                       AGENT_MAX_SPEED,
+                       AGENT_AVG_SPEED,
                        EXIT_COLOR,
                        BLACK,
                        AGENT_COUNT,
                        CLOCK_BOX_WIDTH,
                        CLOCK_BOX_HEIGHT,
                        CLOCK_BOX_LEFT,
-                       CLOCK_BOX_TOP
+                       CLOCK_BOX_TOP, 
+                       OBSTACLE_WIDTH, 
+                       OBSTACLE_HEIGHT,
+                       CORR_WIDTH,
+                       BIG_OBSTACLE_H, 
+                       BIG_OBSTACLE_W,
+                       CSV_FILE_NAME,
                        )
 
 class Simulation:
@@ -32,7 +38,7 @@ class Simulation:
         self.frame_counter = 0
         self.metrics = Metrics(AGENT_COUNT)
 
-    def resolve_positions(self, positions, radius, box_width, box_height, box_left, box_top, obstacles):
+    def resolve_positions(self, positions, radius, box_width, box_height, box_left, box_top, obstacles, agents):
         '''
         Ensures that agents don't overlap and stay within the box
         '''
@@ -49,12 +55,13 @@ class Simulation:
             for exit in EXITS:
                 exit_x, exit_y = exit["position"]
                 exit_width = exit["width"]
-
-                # If the exit is on the right or left, check if the agent is near it
-                if ((x > box_left + box_width - radius and exit_x >= box_left + box_width - radius) or
-                    (x < box_left + radius and exit_x <= box_left + radius)) and (exit_y <= y <= exit_y + exit_width):
+                
+                # If the exit is on the top or bottom, check if the agent is near it
+                if ((y < box_top + radius and exit_y <= box_top + radius) or
+                    (y > box_top + box_height - radius and exit_y >= box_top + box_height - radius)) and (exit_x <= x <= exit_x + exit_width):
                     in_exit_area = True
                     break
+
 
             if not in_exit_area:
                 # Boundary checks if not in the exit area
@@ -84,15 +91,15 @@ class Simulation:
             # squared_diff = diff ** 2
             # length = np.sum(squared_diff)
             length = np.linalg.norm(diff)
-            max_displacement = AGENT_MAX_SPEED // 2
+            max_displacement = AGENT_AVG_SPEED
             if length > (max_displacement):
                 new_pos = (diff/length*max_displacement) + old_pos
-            
             positions[i] = new_pos
         
 
         # Resolve overlaps between agents
         for i in range(n_agents):
+            
             for j in range(i + 1, n_agents):
                 pos_i = positions[i]
                 pos_j = positions[j]
@@ -113,19 +120,23 @@ class Simulation:
                     # Ensure the adjusted positions are within the boundaries again
                     for agent_position in [positions[i], positions[j]]:
                         in_exit_area = False
+                        (x, y) = agent_position
                         for exit in EXITS:
                             exit_x, exit_y = exit["position"]
                             exit_width = exit["width"]
 
-                            # Allow movement through the exit areas on either side
-                            if ((agent_position[0] > box_left + box_width - radius and exit_x >= box_left + box_width - radius) or
-                                (agent_position[0] < box_left + radius and exit_x <= box_left + radius)) and (exit_y <= agent_position[1] <= exit_y + exit_width):
+                            # If the exit is on the top or bottom, check if the agent is near it
+
+                            if ((y < box_top + radius and exit_y <= box_top + radius) or
+                                (y > box_top + box_height - radius and exit_y >= box_top + box_height - radius)) and (exit_x <= x <= exit_x + exit_width):
                                 in_exit_area = True
                                 break
+
 
                         if not in_exit_area:
                             agent_position[0] = max(box_left + radius, min(agent_position[0], box_left + box_width - radius))
                             agent_position[1] = max(box_top + radius, min(agent_position[1], box_top + box_height - radius))
+                        
 
         return positions.tolist()
 
@@ -164,10 +175,10 @@ class Simulation:
         # Agents start behind the desks
         starting_positions = []
         for i in range(AGENT_COUNT // 15):
-            row = i % 10
+            row = i % 16
             for j in range(15):
                 col = j
-                starting_positions.append((BOX_LEFT + 145 + col * (AGENT_RADIUS + 50), BOX_TOP + 30 + (row+1)* 60))
+                starting_positions.append((BOX_LEFT + 75 - AGENT_RADIUS + col * (AGENT_RADIUS + OBSTACLE_WIDTH*2 - AGENT_RADIUS), BOX_TOP + CORR_WIDTH + AGENT_RADIUS + 5 + (row)* AGENT_RADIUS*3))
 
         agents = [Agent(x, y, id) for (id, (x, y)) in enumerate(starting_positions)]
         
@@ -196,45 +207,53 @@ class Simulation:
             
             # Draw all exits
             for exit in EXITS:
-                pygame.draw.rect(screen, EXIT_COLOR, (*exit["position"], 15, exit["width"]))
+                pygame.draw.rect(screen, EXIT_COLOR, (*exit["position"], exit["width"], exit['height']))
 
             # Clock
             pygame.draw.rect(screen, BOX_COLOR, (CLOCK_BOX_LEFT, CLOCK_BOX_TOP, CLOCK_BOX_WIDTH, CLOCK_BOX_HEIGHT), 1)
 
+            # zones for subgoal finding
+            zones = {}
+            zones['middle'] = (Obstacle(BOX_LEFT, BOX_TOP + CORR_WIDTH, OBSTACLE_WIDTH * 29 + 75, OBSTACLE_HEIGHT, color=(255, 0, 0)))
+            zones['top'] = (Obstacle(BOX_LEFT, BOX_TOP, OBSTACLE_WIDTH * 29 + 75, CORR_WIDTH, color=(0, 255, 0)))
+            zones['bottom'] = (Obstacle(BOX_LEFT, BOX_TOP + CORR_WIDTH + OBSTACLE_HEIGHT, OBSTACLE_WIDTH * 29 + 75, CORR_WIDTH, color=(0, 255, 0)))
+            zones['right'] = (Obstacle(BOX_LEFT + OBSTACLE_WIDTH * 29 + 75, BOX_TOP, BOX_WIDTH - (OBSTACLE_WIDTH * 29 + 75), BOX_HEIGHT, color=(0, 0, 255)))
+            
             # Obstacles
             obstacles = []
-            for i in range(10):
-                obstacles.append(Obstacle(BOX_LEFT + 100, BOX_TOP + (i+1) * 60 + 50, 1000, 20))
-
+            for i in range(15):
+                obstacles.append(Obstacle(BOX_LEFT + 75 + (i) * OBSTACLE_WIDTH * 2, BOX_TOP + CORR_WIDTH, OBSTACLE_WIDTH, OBSTACLE_HEIGHT))
+            obstacles.append(Obstacle(BOX_LEFT + ((1250+450+90) // 1.5), BOX_TOP + CORR_WIDTH + (55//1.5), BIG_OBSTACLE_W, BIG_OBSTACLE_H))
+            
             for obstacle in obstacles:
                 obstacle.draw(screen)
 
             # Epsilon for escape-easing
             epsilon=2
 
-            # Dropped out agents:
             dropped_out_agents = [
                 agent for agent in agents
                 if any(
-                    (agent.position.x >= BOX_LEFT + BOX_WIDTH - epsilon and
-                    exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
+                    (agent.position.y >= BOX_TOP + BOX_HEIGHT - epsilon and
+                    exit["position"][0] <= agent.position.x <= exit["position"][0] + exit["width"])
                     or
-                    (agent.position.x <= BOX_LEFT+epsilon and
-                    exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
+                    (agent.position.y <= BOX_TOP+epsilon and
+                    exit["position"][0] <= agent.position.x <= exit["position"][0] + exit["width"])
                     for exit in EXITS
                 )
             ]
+
             self.metrics.record_agent_escape(dropped_out_agents)
 
             # Update and draw agents, only keep agents that have not exited yet
             agents = [
                 agent for agent in agents
                 if not any(
-                    (agent.position.x >= BOX_LEFT + BOX_WIDTH - epsilon and
-                    exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
+                    (agent.position.y >= BOX_TOP + BOX_HEIGHT - epsilon and
+                    exit["position"][0] <= agent.position.x <= exit["position"][0] + exit["width"])
                     or
-                    (agent.position.x <= BOX_LEFT+epsilon and
-                    exit["position"][1] <= agent.position.y <= exit["position"][1] + exit["width"])
+                    (agent.position.y <= BOX_TOP+epsilon and
+                    exit["position"][0] <= agent.position.x <= exit["position"][0] + exit["width"])
                     for exit in EXITS
                 )
             ]
@@ -248,7 +267,7 @@ class Simulation:
 
             # Update positions of the agents
             for agent in agents:
-                agent.flock(np_agents, obstacles)
+                agent.flock(np_agents, obstacles, zones)
                 agent.update()
 
             # Update all active Agents time-steps
@@ -258,7 +277,7 @@ class Simulation:
 
             # Resolve any overlaps or boundary issues
             positions = [(agent.position.x, agent.position.y) for agent in agents]
-            resolved_positions = self.resolve_positions(positions, AGENT_RADIUS, BOX_WIDTH, BOX_HEIGHT, BOX_LEFT, BOX_TOP, obstacles)
+            resolved_positions = self.resolve_positions(positions, AGENT_RADIUS, BOX_WIDTH, BOX_HEIGHT, BOX_LEFT, BOX_TOP, obstacles, agents)
             # resolved_positions = positions
             # Update boid positions after resolving
             for i, agent in enumerate(agents):
@@ -283,8 +302,11 @@ class Simulation:
 
         pygame.quit()
 
-        # self.metrics.show_tick_distribution()
-        # self.metrics.show_mean_panic_distribution()
-        # self.metrics.plot_average_panic_over_time()
-        # self.metrics.save_metrics()
+        self.metrics.show_tick_distribution()
+        self.metrics.show_mean_panic_distribution()
+        self.metrics.plot_average_panic_over_time()
+        self.metrics.save_metrics()
+
+
+
 
