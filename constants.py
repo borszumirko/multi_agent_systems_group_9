@@ -34,27 +34,57 @@ EXIT_COLOR = (202, 174, 152)
 
 
 # Obstacles -> TODO: No single source of truth and not dynamic (Are hardcoded in the simulation) 
-y_min = 100000
+y_min = HEIGHT
 y_max = 0
-for i in range(10):
-    center = (BOX_LEFT + 100 + (1000 // 2), BOX_TOP + (i+1) * 60 + 50 + 20 // 2)
-    if center[1] + 10 > y_max:
-        y_max = center[1] + 10
-    if center[1] - 10 < y_min:
-        y_min = center[1] - 10
-        print(y_min)
+x_min = WIDTH
+x_max = 0
+centers = []
+obstacle_w = 1000   # Width of benches (x-axis)
+obstacle_h = 20     # Height of benches (y-axis)
+obstacle_n = 10     # Number of benches
+run_id = 1          # horizontal benches: 1. vertical benches: 0
+for i in range(obstacle_n):
+    if run_id:
+        center = (BOX_LEFT + 100 + (obstacle_w // 2), BOX_TOP + (i+1) * 60 + 50 + (obstacle_h // 2))
+    else:
+        center = (BOX_LEFT + (i+1) * 60 + (obstacle_w // 2), BOX_TOP + 100 + (obstacle_h // 2))
+    centers.append(center)
+    if center[1] + obstacle_h//2 > y_max:
+        y_max = center[1] + obstacle_h//2
+    if center[1] - obstacle_h//2 < y_min:
+        y_min = center[1] - obstacle_h//2
+    if center[0] + obstacle_w//2 > x_max:
+        x_max = center[0] + obstacle_w//2
+    if center[0] - obstacle_w//2 < x_min:
+        x_min = center[0] - obstacle_w//2
 
 obstacle_zone_y_span = y_max - y_min
+obstacle_zone_x_span = x_max - x_min
 # Subgoal Zones
 SUBGOAL_N = 2
-SUBGOAL_ZONES = {
-    0:[
-        {"position": (BOX_LEFT + 50, obstacle_zone_y_span//2 + y_min), "w": 100, "h": obstacle_zone_y_span+150},
-        {"position": (BOX_LEFT + 1150, obstacle_zone_y_span//2 + y_min), "w": 100, "h": obstacle_zone_y_span+150}
-    ],
-    1:[
-        # The pre-goal-zone is wide as the whole calssroom
-        # It is as high as the exit itself plus 50 pixels (So it embedds the exit)
-        {"position":(WIDTH//2, ex["position"][1]), "w":BOX_WIDTH, "h":EXIT_WIDTH + 100} for ex in EXITS 
-    ],
-}
+if run_id:
+    SUBGOAL_ZONES = {
+        0:[
+            {"position": (BOX_LEFT + (x_min-BOX_LEFT)//2, obstacle_zone_y_span//2 + y_min), "w": x_min-BOX_LEFT, "h": obstacle_zone_y_span+150},
+            {"position": (x_min + obstacle_zone_x_span + (x_min-BOX_LEFT)//2, obstacle_zone_y_span//2 + y_min), "w": x_min-BOX_LEFT, "h": obstacle_zone_y_span+150}
+        ],
+        1:[
+            # The pre-goal-zone is wide as the whole calssroom
+            # It is as high as the exit itself plus 50 pixels (So it embedds the exit)
+            {"position":(WIDTH//2, ex["position"][1]), "w":BOX_WIDTH, "h":EXIT_WIDTH + 100} for ex in EXITS 
+        ],
+    }
+else:
+    SUBGOAL_ZONES = {
+        0:[
+            {"position": (obstacle_zone_x_span//2 + x_min, BOX_TOP + (y_min-BOX_TOP)//2), "w": obstacle_zone_x_span+150, "h": y_min-BOX_TOP},
+            {"position": (obstacle_zone_x_span//2 + x_min, y_min + obstacle_zone_y_span + (y_min-BOX_TOP)//2), "w": obstacle_zone_x_span+150, "h": y_min-BOX_TOP}
+        ],
+        1:[
+            # The pre-goal-zone is wide as the whole calssroom
+            # It is as high as the exit itself plus 50 pixels (So it embedds the exit)
+            {"position":(WIDTH//2, ex["position"][1]), "w":BOX_WIDTH, "h":EXIT_WIDTH + 100} for ex in EXITS 
+        ],
+    }
+
+BASE_ZONE = {"position": (sum([c[0] for c in centers])//len(centers), sum([c[1] for c in centers])//len(centers)), "w": obstacle_zone_x_span, "h": obstacle_zone_y_span}
