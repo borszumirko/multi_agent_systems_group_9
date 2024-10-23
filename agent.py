@@ -46,6 +46,7 @@ class Agent:
         self.physical_discomfort = 0
         self.avg_panic_around = 0
         self.in_exit_area = False
+        self.highlight = False
 
     
     def apply_force(self, force):
@@ -65,7 +66,9 @@ class Agent:
         self.velocity = self.velocity * self.panic + self.acceleration * (1 - self.panic)
         if self.velocity.length() > self.max_speed:
             self.velocity.scale_to_length(self.max_speed)
-            self.color = (0, 0, 255)
+            self.highlight = True
+        else:
+            self.highlight = False
             
         self.position += self.velocity
         self.acceleration *= 0
@@ -231,5 +234,7 @@ class Agent:
         return steering
 
     def draw(self, screen):
+        if self.highlight:
+            pygame.draw.circle(screen, (0, 255, 0), (int(self.position.x), int(self.position.y)), AGENT_RADIUS + 2)
         pygame.draw.circle(screen, self.color, (int(self.position.x), int(self.position.y)), AGENT_RADIUS)
         
