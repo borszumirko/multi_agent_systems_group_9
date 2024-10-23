@@ -1,6 +1,7 @@
 import pygame
 import random
 import numpy as np
+from subgoals import find_subgoal
 from constants import (
     AGENT_MAX_FORCE,
     AGENT_AVG_SPEED,
@@ -16,7 +17,8 @@ from constants import (
     BOX_WIDTH,
     CORR_WIDTH,
     OBSTACLE_HEIGHT,
-    AGENT_SPEED_SIGMA
+    AGENT_SPEED_SIGMA,
+    SUBGOAL_N
 )
 
 def normalize_non_zero(vector):
@@ -46,6 +48,10 @@ class Agent:
         self.physical_discomfort = 0
         self.avg_panic_around = 0
         self.in_exit_area = False
+        self.highlight = False
+
+        # Subgoal counter
+        self.subgoal_indicator = 0
 
     
     def apply_force(self, force):
@@ -64,20 +70,22 @@ class Agent:
         # panic influences change in velocity
         self.velocity = self.velocity * self.panic + self.acceleration * (1 - self.panic)
         if self.velocity.length() > self.max_speed:
-            self.velocity.scale_to_length(self.max_speed)
-            self.color = (0, 0, 255)
+            self.velocity.scale_to_length(self.max_speed)   
+            self.highlight = True
+        else:
+            self.highlight = False
             
         self.position += self.velocity
         self.acceleration *= 0
 
-    def flock(self, agents, obstacles, zones):
+    def flock(self, agents, obstacles):
         """
         Apply flocking behaviors with a bias towards the exit.
         """
         alignment, align_panic = self.align(agents)
         cohesion, physical_panic = self.cohere(agents)
         separation = self.separate(agents)
-        exit_steering, exit_panic = self.steer_to_exit(zones)
+        exit_steering, exit_panic = self.steer_to_exit()
         avoid_obstacles = self.avoid_obstacles(obstacles)
         
         new_panic = (align_panic + exit_panic + physical_panic) / 3
@@ -145,7 +153,7 @@ class Agent:
             self.avg_panic_around = others_panic
             steering /= total
             steering -= self.position
-            steering -= self.velocity
+            # steering -= self.velocity
             steering = normalize_non_zero(steering)
             steering *= 1.5
 
@@ -171,41 +179,35 @@ class Agent:
                 total += 1
         if total > 0:
             steering /= total
-            steering -= self.velocity
+            # steering -= self.velocity
             steering = normalize_non_zero(steering)
             steering *= 2.5
             
         return steering
 
-    def steer_to_exit(self, zones):
+    def steer_to_exit(self):
         '''
         Agents choose a subgoal based on their position and try to steer towards it
         '''
-
-        if zones['middle'].is_in(self.position):
-            if self.position.y > BOX_TOP + (BOX_HEIGHT // 2):
-                target = pygame.Vector2(self.position.x, BOX_TOP + BOX_HEIGHT - (CORR_WIDTH // 2)) # up
-            else:
-                target = pygame.Vector2(self.position.x, BOX_TOP + (CORR_WIDTH // 2)) # down
-        elif zones['top'].is_in(self.position):
-            target = pygame.Vector2(BOX_LEFT + BOX_WIDTH, BOX_TOP + (CORR_WIDTH // 2)) # right frm top
-        elif zones['bottom'].is_in(self.position):
-            target = pygame.Vector2(BOX_LEFT + BOX_WIDTH, BOX_TOP + BOX_HEIGHT - (CORR_WIDTH // 2)) # right from bottom
-        elif zones['right'].is_in(self.position): # go towards nearest exit
+        if self.subgoal_indicator >= SUBGOAL_N:
+            # Find the nearest exit
             min_distance = float('inf')
             target = None
+
             for exit in EXITS:
-                # Find the nearest exit
-                exit_position = pygame.Vector2(exit["position"][0]+ exit["width"] / 2, exit["position"][1]+ exit["height"] / 2)
+                exit_position = pygame.Vector2(exit["position"][0] + exit["width"]/2, exit["position"][1] + exit["height"] / 2)
                 distance_to_exit = self.position.distance_to(exit_position)
                 if distance_to_exit < min_distance:
                     min_distance = distance_to_exit
                     target = exit_position
-
+        else:
+            target, in_goal =  find_subgoal(self.subgoal_indicator, self.position)
+            if in_goal:
+                self.subgoal_indicator += 1
         steering = target - self.position
         panic_component = 1 / ENV_LENGTH * (steering.length() - self.ease_distance)
         
-        steering -= self.velocity
+        # steering -= self.velocity
         steering = normalize_non_zero(steering)
         steering *= 6.5
         
@@ -231,5 +233,7 @@ class Agent:
         return steering
 
     def draw(self, screen):
+        if self.highlight:
+            pygame.draw.circle(screen, (0, 255, 0), (int(self.position.x), int(self.position.y)), AGENT_RADIUS + 2)
         pygame.draw.circle(screen, self.color, (int(self.position.x), int(self.position.y)), AGENT_RADIUS)
         

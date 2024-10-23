@@ -29,7 +29,10 @@ from constants import (EXITS,
                        BIG_OBSTACLE_H, 
                        BIG_OBSTACLE_W,
                        CSV_FILE_NAME,
-                       SCALING
+                       SCALING, 
+                       SUBGOAL_ZONES,
+                       VISUALIZE_SUBGOALS,
+                       BASE_ZONE
                        )
 
 class Simulation:
@@ -217,11 +220,13 @@ class Simulation:
             pygame.draw.rect(screen, BOX_COLOR, (CLOCK_BOX_LEFT, CLOCK_BOX_TOP, CLOCK_BOX_WIDTH, CLOCK_BOX_HEIGHT), 1)
 
             # zones for subgoal finding
-            zones = {}
-            zones['middle'] = (Obstacle(BOX_LEFT, BOX_TOP + CORR_WIDTH, OBSTACLE_WIDTH * 29 + 75, OBSTACLE_HEIGHT, color=(255, 0, 0)))
-            zones['top'] = (Obstacle(BOX_LEFT, BOX_TOP, OBSTACLE_WIDTH * 29 + 75, CORR_WIDTH, color=(0, 255, 0)))
-            zones['bottom'] = (Obstacle(BOX_LEFT, BOX_TOP + CORR_WIDTH + OBSTACLE_HEIGHT, OBSTACLE_WIDTH * 29 + 75, CORR_WIDTH, color=(0, 255, 0)))
-            zones['right'] = (Obstacle(BOX_LEFT + OBSTACLE_WIDTH * 29 + 75, BOX_TOP, BOX_WIDTH - (OBSTACLE_WIDTH * 29 + 75), BOX_HEIGHT, color=(0, 0, 255)))
+            if VISUALIZE_SUBGOALS:
+                for subgoals_dicts in SUBGOAL_ZONES.values():
+                    subgoals = [Obstacle(**p) for p in subgoals_dicts]
+                    for subgoal in subgoals:
+                        subgoal.draw(screen)
+                base_zone = Obstacle(**BASE_ZONE)
+                base_zone.draw(screen)
             
             # Obstacles
             obstacles = []
@@ -271,7 +276,7 @@ class Simulation:
 
             # Update positions of the agents
             for agent in agents:
-                agent.flock(np_agents, obstacles, zones)
+                agent.flock(np_agents, obstacles)
                 agent.update()
 
             # Update all active Agents time-steps
