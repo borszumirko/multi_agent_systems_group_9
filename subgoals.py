@@ -52,6 +52,6 @@ def am_i_stuck(agent_location, zone_id):
     base_zone = Obstacle(**BASE_ZONE)
     if not zone_id:
         return False
-    if base_zone.is_in(pygame.Vector2(agent_location.x+AGENT_RADIUS, agent_location.y+AGENT_RADIUS)) or base_zone.is_in(pygame.Vector2(agent_location.x-AGENT_RADIUS, agent_location.y-AGENT_RADIUS)):
+    if base_zone.is_in(pygame.Vector2(agent_location.x, agent_location.y+AGENT_RADIUS+obstacle_padding)) or base_zone.is_in(pygame.Vector2(agent_location.x, agent_location.y-AGENT_RADIUS-obstacle_padding)):
         return True
     return False

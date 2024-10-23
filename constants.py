@@ -49,8 +49,8 @@ SUBGOAL_N = 2
 VISUALIZE_SUBGOALS = True
 SUBGOAL_ZONES = {
     0:[
-        {"left": BOX_LEFT, "top": BOX_TOP, "width": OBSTACLE_WIDTH * 29 + 75, "height": CORR_WIDTH, "color": (0, 255, 0)},
-        {"left": BOX_LEFT, "top": BOX_TOP+CORR_WIDTH+OBSTACLE_HEIGHT, "width": OBSTACLE_WIDTH * 29 + 75, "height": CORR_WIDTH, "color": (0, 255, 0)}
+        {"left": BOX_LEFT, "top": BOX_TOP, "width": OBSTACLE_WIDTH * 29 + 175, "height": CORR_WIDTH, "color": (0, 255, 0)},
+        {"left": BOX_LEFT, "top": BOX_TOP+CORR_WIDTH+OBSTACLE_HEIGHT, "width": OBSTACLE_WIDTH * 29 + 175, "height": CORR_WIDTH, "color": (0, 255, 0)}
     ],
     1:[
         # The pre-goal-zone is wide as the whole classroom
