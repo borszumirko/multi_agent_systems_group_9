@@ -311,10 +311,10 @@ class Simulation:
 
         pygame.quit()
 
-        self.metrics.show_tick_distribution()
-        self.metrics.show_mean_panic_distribution()
-        self.metrics.plot_average_panic_over_time()
-        self.metrics.save_metrics()
+        # self.metrics.show_tick_distribution()
+        # self.metrics.show_mean_panic_distribution()
+        # self.metrics.plot_average_panic_over_time()
+        # self.metrics.save_metrics()
 
 
 

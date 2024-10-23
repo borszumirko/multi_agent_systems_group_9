@@ -226,7 +226,7 @@ class Agent:
                 total += 1
         if total > 0:
             steering /= total
-            steering -= self.velocity
+            # steering -= self.velocity
             steering = normalize_non_zero(steering)
             steering *= 3.5
             
