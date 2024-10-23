@@ -145,7 +145,7 @@ class Agent:
             self.avg_panic_around = others_panic
             steering /= total
             steering -= self.position
-            steering -= self.velocity
+            # steering -= self.velocity
             steering = normalize_non_zero(steering)
             steering *= 1.5
 
@@ -171,7 +171,7 @@ class Agent:
                 total += 1
         if total > 0:
             steering /= total
-            steering -= self.velocity
+            # steering -= self.velocity
             steering = normalize_non_zero(steering)
             steering *= 2.5
             
@@ -205,7 +205,7 @@ class Agent:
         steering = target - self.position
         panic_component = 1 / ENV_LENGTH * (steering.length() - self.ease_distance)
         
-        steering -= self.velocity
+        # steering -= self.velocity
         steering = normalize_non_zero(steering)
         steering *= 6.5
         
@@ -224,7 +224,7 @@ class Agent:
                 total += 1
         if total > 0:
             steering /= total
-            steering -= self.velocity
+            # steering -= self.velocity
             steering = normalize_non_zero(steering)
             steering *= 3.5
             
