@@ -192,6 +192,10 @@ def average_over_subruns(file_names):
             df = pd.read_csv(subrun_file)
             subrun_dfs.append(df)
 
+        # If there are no subruns, just go back
+        if not subrun_dfs:
+            return 0 
+
         # Concatenate all subrun dataframes into one
         all_subruns_df = pd.concat(subrun_dfs)
 
