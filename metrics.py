@@ -179,11 +179,34 @@ def plot_boxplots_from_runs(csv_files, save_directory='plots'):
 
     print(f"Plots saved to {save_directory}")
 
+def average_over_subruns(file_names):
+    for file_name in file_names:
+        # Get all the subrun files related to this main file
+        sub_run_files = glob.glob(f"{file_name[:-4]}_subrun_*")
+        
+        # List to hold dataframes of subruns
+        subrun_dfs = []
+
+        # Open and load each subrun file
+        for subrun_file in sub_run_files:
+            df = pd.read_csv(subrun_file)
+            subrun_dfs.append(df)
+
+        # Concatenate all subrun dataframes into one
+        all_subruns_df = pd.concat(subrun_dfs)
+
+        # Group by 'Agent ID' and calculate the mean for each column
+        averaged_df = all_subruns_df.groupby('Agent ID').mean()
+
+        # Save the averaged dataframe as the original filename
+        averaged_df.to_csv(file_name)
 
 if __name__=="__main__":
     # search for csv files in run-folder
     csv_files = glob.glob("runs/*.csv")
 
     # Hard-coded Version:
-    csv_files = ["runs/Experiment_1.csv", "runs/Experiment_2.csv", "runs/Experiment_3.csv", "runs/Experiment_4.csv"]
+    #csv_files = ["runs/Experiment_1.csv", "runs/Experiment_2.csv", "runs/Experiment_3.csv", "runs/Experiment_4.csv"]
+    csv_files = ["runs/Experiment_3.csv"]
+    average_over_subruns(csv_files)
     plot_boxplots_from_runs(csv_files)
