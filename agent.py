@@ -49,6 +49,7 @@ class Agent:
         self.avg_panic_around = 0
         self.in_exit_area = False
         self.highlight = False
+        self.exit_distances = []
 
         # Subgoal counter
         self.subgoal_indicator = 0
@@ -77,6 +78,7 @@ class Agent:
             
         self.position += self.velocity
         self.acceleration *= 0
+        self.calculate_exit_distances()
 
     def flock(self, agents, obstacles):
         """
@@ -236,4 +238,7 @@ class Agent:
         if self.highlight:
             pygame.draw.circle(screen, (0, 255, 0), (int(self.position.x), int(self.position.y)), AGENT_RADIUS + 2)
         pygame.draw.circle(screen, self.color, (int(self.position.x), int(self.position.y)), AGENT_RADIUS)
-        
+
+    def calculate_exit_distances(self):
+        exit_vectors = [pygame.Vector2(e["position"][0] - e["width"]//2, e["position"][1] - e["heigth"]//2) for e in EXITS]
+        self.exit_distances = [self.position.distance_to(center) for center in exit_vectors]

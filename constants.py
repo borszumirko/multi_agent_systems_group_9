@@ -46,7 +46,7 @@ EXIT_COLOR = (202, 174, 152)
 
 # Subgoal Zones
 SUBGOAL_N = 2
-VISUALIZE_SUBGOALS = True
+VISUALIZE_SUBGOALS = False
 SUBGOAL_ZONES = {
     0:[
         {"left": BOX_LEFT, "top": BOX_TOP, "width": OBSTACLE_WIDTH * 29 + 175, "height": CORR_WIDTH, "color": (0, 255, 0)},
