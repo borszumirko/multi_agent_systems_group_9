@@ -240,5 +240,5 @@ class Agent:
         pygame.draw.circle(screen, self.color, (int(self.position.x), int(self.position.y)), AGENT_RADIUS)
 
     def calculate_exit_distances(self):
-        exit_vectors = [pygame.Vector2(e["position"][0] - e["width"]//2, e["position"][1] - e["heigth"]//2) for e in EXITS]
+        exit_vectors = [pygame.Vector2(e["position"][0] - e["width"]//2, e["position"][1] - e["height"]//2) for e in EXITS]
         self.exit_distances = [self.position.distance_to(center) for center in exit_vectors]

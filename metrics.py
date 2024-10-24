@@ -7,11 +7,12 @@ import pandas as pd
 from constants import CSV_FILE_NAME
 
 class Metrics:
-    def __init__(self, number_of_agents, initial_tick=0) -> None:
+    def __init__(self, number_of_agents, run_name=CSV_FILE_NAME, initial_tick=0) -> None:
         self.number_of_agents = number_of_agents
         self.agent_ticks = [initial_tick for _ in range(number_of_agents)]
         self.agent_panic = [[] for _ in range(number_of_agents)]
         self.agent_escaped = [False for _ in range(number_of_agents)]
+        self.run_name = run_name
     
     def increment_tick(self):
         for id in range(self.number_of_agents):
@@ -88,7 +89,7 @@ class Metrics:
         plt.xlabel('Tick')
         plt.ylabel('Average Panic Level')
         #plt.title('Average Panic Level Over Time')
-        panic_over_time_path = os.path.join(save_directory, f'panic_over_time{CSV_FILE_NAME[:-4]}.png')
+        panic_over_time_path = os.path.join(save_directory, f'panic_over_time{self.run_name[:-4]}.png')
         plt.savefig(panic_over_time_path, bbox_inches='tight')
         plt.show()
 
@@ -100,9 +101,11 @@ class Metrics:
         plt.title('Distribution of Mean Panic Levels')
         plt.show()
 
-    def save_metrics(self, save_directory='runs', filename=CSV_FILE_NAME):
+    def save_metrics(self, save_directory='runs', filename=None):
         import os
 
+        if not filename:
+            filename = self.run_name
         # Ensure the save directory exists
         os.makedirs(save_directory, exist_ok=True)
         save_filename = os.path.join(save_directory, filename)

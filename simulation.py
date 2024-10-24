@@ -36,11 +36,13 @@ from constants import (EXITS,
                        )
 
 class Simulation:
-    def __init__(self):
+    def __init__(self, run_name=CSV_FILE_NAME, show_plots=True):
         random.seed(42)
         self.total_agents = AGENT_COUNT
         self.frame_counter = 0
-        self.metrics = Metrics(AGENT_COUNT)
+        self.metrics = Metrics(AGENT_COUNT, run_name=run_name)
+        self.run_name = run_name
+        self.show_plots = show_plots
 
     def resolve_positions(self, positions, radius, box_width, box_height, box_left, box_top, obstacles, agents):
         '''
@@ -311,9 +313,10 @@ class Simulation:
 
         pygame.quit()
 
-        self.metrics.show_tick_distribution()
-        self.metrics.show_mean_panic_distribution()
-        self.metrics.plot_average_panic_over_time()
+        if self.show_plots:
+            self.metrics.show_tick_distribution()
+            self.metrics.show_mean_panic_distribution()
+            self.metrics.plot_average_panic_over_time()
         self.metrics.save_metrics()
 
 
