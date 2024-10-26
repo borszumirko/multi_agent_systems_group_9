@@ -7,7 +7,6 @@ from constants import (
     AGENT_AVG_SPEED,
     AGENT_RADIUS,
     EXITS,
-    EXIT_WIDTH,
     AGENT_COLOR,
     AGENT_COUNT,
     ENV_LENGTH,
@@ -15,11 +14,11 @@ from constants import (
     BOX_HEIGHT,
     BOX_TOP,
     BOX_WIDTH,
-    CORR_WIDTH,
-    OBSTACLE_HEIGHT,
     AGENT_SPEED_SIGMA,
-    SUBGOAL_N
+    SUBGOAL_N,
+    HIGH_SEPARATION_FORCE,
 )
+
 
 def normalize_non_zero(vector):
     null_vec = pygame.Vector2(0, 0)
@@ -28,19 +27,22 @@ def normalize_non_zero(vector):
     else:
         return null_vec
 
+
 class Agent:
     def __init__(self, x, y, id):
         self.position = pygame.Vector2(x, y)
         self.velocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
         self.acceleration = pygame.Vector2(0, 0)
-        self.max_speed = np.clip(np.random.normal(AGENT_AVG_SPEED, AGENT_SPEED_SIGMA), AGENT_AVG_SPEED-AGENT_SPEED_SIGMA, AGENT_AVG_SPEED+AGENT_SPEED_SIGMA)
+        self.max_speed = np.clip(np.random.normal(AGENT_AVG_SPEED, AGENT_SPEED_SIGMA),
+                                 AGENT_AVG_SPEED - AGENT_SPEED_SIGMA, AGENT_AVG_SPEED + AGENT_SPEED_SIGMA)
         self.max_force = AGENT_MAX_FORCE
-        self.avoid_distance = 2 * AGENT_RADIUS + 2
+        self.avoid_distance = 3 * AGENT_RADIUS + 2
         self.cohesion_distance = 8 * AGENT_RADIUS
         self.alignment_distance = 4 * AGENT_RADIUS
-        self.perception = max(self.avoid_distance, self.alignment_distance, self.cohesion_distance) # perception required for the record distances function
+        self.perception = max(self.avoid_distance, self.alignment_distance,
+                              self.cohesion_distance)  # perception required for the record distances function
         self.id = id
-        self.distances = np.full(AGENT_COUNT, fill_value=-1) # distance of agents around
+        self.distances = np.full(AGENT_COUNT, fill_value=-1)  # distance of agents around
         self.color = AGENT_COLOR
         self.previous_update = pygame.Vector2(0, 0)
         self.panic = 0
@@ -54,7 +56,6 @@ class Agent:
         # Subgoal counter
         self.subgoal_indicator = 0
 
-    
     def apply_force(self, force):
         """
         Add force to acceleration.
@@ -67,15 +68,15 @@ class Agent:
         """
 
         if self.acceleration.length() > self.max_force:
-                self.acceleration.scale_to_length(self.max_force)
+            self.acceleration.scale_to_length(self.max_force)
         # panic influences change in velocity
         self.velocity = self.velocity * self.panic + self.acceleration * (1 - self.panic)
         if self.velocity.length() > self.max_speed:
-            self.velocity.scale_to_length(self.max_speed)   
+            self.velocity.scale_to_length(self.max_speed)
             self.highlight = True
         else:
             self.highlight = False
-            
+
         self.position += self.velocity
         self.acceleration *= 0
         self.calculate_exit_distances()
@@ -89,7 +90,7 @@ class Agent:
         separation = self.separate(agents)
         exit_steering, exit_panic = self.steer_to_exit()
         avoid_obstacles = self.avoid_obstacles(obstacles)
-        
+
         new_panic = (align_panic + exit_panic + physical_panic) / 3
         panic_update = min(1, (self.panic + new_panic) / 2)
         if panic_update >= 0:
@@ -110,7 +111,9 @@ class Agent:
         self.apply_force(separation)
         self.apply_force(exit_steering)
         self.apply_force(avoid_obstacles)
-        
+        # Very close to the goal override other forces (like avoid_walls) and steer into exit.
+        if min(self.exit_distances) < self.cohesion_distance:
+            self.apply_force(exit_steering)
 
     def align(self, agents):
         '''
@@ -131,7 +134,7 @@ class Agent:
             steering -= self.velocity
             steering = normalize_non_zero(steering)
             steering *= 1.5
-            
+
         return steering, panic_component
 
     def cohere(self, agents):
@@ -162,7 +165,7 @@ class Agent:
             # /45 instead of /len(agents), since we have more agents than in the paper.
             # 45 is the maximum number of other agents close by, given the cohesion_distance
             panic_component = total / (45)
-        
+
         return steering, panic_component
 
     def separate(self, agents):
@@ -176,7 +179,7 @@ class Agent:
             distance = self.distances[other.id]
             if other != self and distance < self.avoid_distance and distance != -1:
                 diff = self.position - other.position
-                diff /= distance + 0.00000000001
+                diff /= (self.avoid_distance - distance) + 0.00000000001
                 steering += diff
                 total += 1
         if total > 0:
@@ -184,46 +187,49 @@ class Agent:
             # steering -= self.velocity
             steering = normalize_non_zero(steering)
             steering *= 2.5
-            
+            if HIGH_SEPARATION_FORCE:
+                steering *= 3
+
         return steering
 
     def steer_to_exit(self):
         '''
         Agents choose a subgoal based on their position and try to steer towards it
         '''
+        self.calculate_exit_distances()
         if self.subgoal_indicator >= SUBGOAL_N:
             # Find the nearest exit
             min_distance = float('inf')
             target = None
 
             for exit in EXITS:
-                exit_position = pygame.Vector2(exit["position"][0] + exit["width"]/2, exit["position"][1] + exit["height"] / 2)
+                exit_position = pygame.Vector2(exit["position"][0] + exit["width"] / 2,
+                                               exit["position"][1] + exit["height"] / 2)
                 distance_to_exit = self.position.distance_to(exit_position)
                 if distance_to_exit < min_distance:
                     min_distance = distance_to_exit
                     target = exit_position
         else:
-            target, in_goal =  find_subgoal(self.subgoal_indicator, self.position)
+            target, in_goal = find_subgoal(self.subgoal_indicator, self.position)
             if in_goal:
                 self.subgoal_indicator += 1
         steering = target - self.position
         panic_component = 1 / ENV_LENGTH * (steering.length() - self.ease_distance)
-        
+
         # steering -= self.velocity
         steering = normalize_non_zero(steering)
         steering *= 6.5
-        
+
         return steering, panic_component
-    
+
     def avoid_obstacles(self, obstacles):
         '''
         Agents try to steer away from nearby obstacles
         '''
-        total = 0
-        steering = pygame.Vector2(0, 0)
+        steering, total = self.avoid_walls()
         for obstacle in obstacles:
-            vector, vector_length = obstacle.away_from_obst(self.position.x, self.position.y)
-            if vector_length <= self.avoid_distance:
+            if self.is_in_obstacle(obstacle, self.avoid_distance):
+                vector, vector_length = obstacle.away_from_obst(self.position.x, self.position.y)
                 steering += vector
                 total += 1
         if total > 0:
@@ -231,8 +237,39 @@ class Agent:
             # steering -= self.velocity
             steering = normalize_non_zero(steering)
             steering *= 3.5
-            
+
         return steering
+
+    def avoid_walls(self):
+        '''
+        Agents try to steer away from bordering walls.
+        '''
+        # Calculate distances to each wall
+        left = self.position[0] - BOX_LEFT
+        right = BOX_LEFT + BOX_WIDTH - self.position[0]
+        top = self.position[1] - BOX_TOP
+        bottom = BOX_TOP + BOX_HEIGHT - self.position[1]
+        distances = [left, right, top, bottom]
+
+        steering = pygame.Vector2(0, 0)
+        total = 0
+
+        for i, dist in enumerate(distances):
+            if dist < self.avoid_distance:
+                total = 1
+                if i < 2:
+                    # left & right
+                    steering += pygame.Vector2((self.avoid_distance - dist) * (-1) ** i, 0)
+                else:
+                    # top & bottom
+                    steering += pygame.Vector2(0, (self.avoid_distance - dist) * (-1) ** i)
+
+        return steering, total
+
+    def is_in_obstacle(self, obstacle, buffer_radius):
+        rect = pygame.Rect(obstacle.left - buffer_radius, obstacle.top - buffer_radius
+                           , obstacle.width + 2 * buffer_radius, obstacle.height + 2 * buffer_radius)
+        return rect.collidepoint(self.position)
 
     def draw(self, screen):
         if self.highlight:
@@ -240,5 +277,6 @@ class Agent:
         pygame.draw.circle(screen, self.color, (int(self.position.x), int(self.position.y)), AGENT_RADIUS)
 
     def calculate_exit_distances(self):
-        exit_vectors = [pygame.Vector2(e["position"][0] - e["width"]//2, e["position"][1] - e["height"]//2) for e in EXITS]
+        exit_vectors = [pygame.Vector2(e["position"][0] - e["width"] // 2, e["position"][1] - e["height"] // 2) for e in
+                        EXITS]
         self.exit_distances = [self.position.distance_to(center) for center in exit_vectors]
