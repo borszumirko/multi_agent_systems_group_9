@@ -2,8 +2,12 @@ from simulation import Simulation
 import cProfile
 import pstats
 import numpy as np
+import random
 from constants import CSV_FILE_NAME
 
+def set_seed(seed: int):
+    np.random.seed(seed)          # For numpy's RNG
+    random.seed(seed)             # For Python's built-in RNG
 
 def main():
     simulation = Simulation()
@@ -18,6 +22,7 @@ def n_runs(n=30):
 import random
 if __name__=="__main__":
     #main()
+    set_seed(42)
     n_runs(2)
     #cProfile.run('main()', 'profiling_stats')
     #p = pstats.Stats('profiling_stats')
