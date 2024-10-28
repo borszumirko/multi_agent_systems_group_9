@@ -29,11 +29,11 @@ def normalize_non_zero(vector):
         return null_vec
 
 class Agent:
-    def __init__(self, x, y, id):
+    def __init__(self, x, y, id, avg_speed=AGENT_AVG_SPEED, sigma=AGENT_SPEED_SIGMA):
         self.position = pygame.Vector2(x, y)
         self.velocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
         self.acceleration = pygame.Vector2(0, 0)
-        self.max_speed = np.clip(np.random.normal(AGENT_AVG_SPEED, AGENT_SPEED_SIGMA), AGENT_AVG_SPEED-AGENT_SPEED_SIGMA, AGENT_AVG_SPEED+AGENT_SPEED_SIGMA)
+        self.max_speed = np.random.uniform(avg_speed - avg_speed*sigma, avg_speed + avg_speed*sigma)
         self.max_force = AGENT_MAX_FORCE
         self.avoid_distance = 2 * AGENT_RADIUS + 2
         self.cohesion_distance = 8 * AGENT_RADIUS
@@ -65,15 +65,16 @@ class Agent:
         Update boid's velocity and position.
         """
 
-        if self.acceleration.length() > self.max_force:
-                self.acceleration.scale_to_length(self.max_force)
+        # if self.acceleration.length() > self.max_force:
+        #         self.acceleration.scale_to_length(self.max_force)
         # panic influences change in velocity
         self.velocity = self.velocity * self.panic + self.acceleration * (1 - self.panic)
-        if self.velocity.length() > self.max_speed:
-            self.velocity.scale_to_length(self.max_speed)   
-            self.highlight = True
-        else:
-            self.highlight = False
+        # if self.velocity.length() > self.max_speed:
+        #     self.velocity.scale_to_length(self.max_speed)
+        self.velocity.scale_to_length(self.max_speed)
+            # self.highlight = True
+        # else:
+        #     self.highlight = False
             
         self.position += self.velocity
         self.acceleration *= 0
@@ -148,6 +149,8 @@ class Agent:
                 steering += other.position
                 others_panic += other.panic
                 total += 1
+            if other != self and distance < AGENT_RADIUS * 3 and distance != -1:
+                close_neighbors += 1
         if total > 0:
             others_panic /= total
             self.avg_panic_around = others_panic
@@ -159,7 +162,8 @@ class Agent:
 
             # /45 instead of /len(agents), since we have more agents than in the paper.
             # 45 is the maximum number of other agents close by, given the cohesion_distance
-            panic_component = total / (45)
+            # panic_component = total / (45)
+            panic_component = close_neighbors / 6
         
         return steering, panic_component
 
@@ -170,6 +174,7 @@ class Agent:
         '''
         total = 0
         steering = pygame.Vector2(0, 0)
+        weight = 2.5
         for other in agents:
             distance = self.distances[other.id]
             if other != self and distance < self.avoid_distance and distance != -1:
@@ -177,11 +182,13 @@ class Agent:
                 diff /= distance + 0.00000000001
                 steering += diff
                 total += 1
+            if distance < AGENT_RADIUS * 2:
+                weight *= 2
         if total > 0:
             steering /= total
             # steering -= self.velocity
             steering = normalize_non_zero(steering)
-            steering *= 2.5
+            steering *= weight
             
         return steering
 
@@ -218,17 +225,23 @@ class Agent:
         Agents try to steer away from nearby obstacles
         '''
         total = 0
+        weight = 3.5
         steering = pygame.Vector2(0, 0)
         for obstacle in obstacles:
             vector, vector_length = obstacle.away_from_obst(self.position.x, self.position.y)
             if vector_length <= self.avoid_distance:
                 steering += vector
                 total += 1
+            if obstacle.is_in(self.position):
+                self.highlight = True
+                weight *= 5
+            else:
+                self.highlight = False
         if total > 0:
             steering /= total
             # steering -= self.velocity
             steering = normalize_non_zero(steering)
-            steering *= 3.5
+            steering *= weight
             
         return steering
 

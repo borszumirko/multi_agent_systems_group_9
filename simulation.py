@@ -32,12 +32,14 @@ from constants import (EXITS,
                        SCALING, 
                        SUBGOAL_ZONES,
                        VISUALIZE_SUBGOALS,
-                       BASE_ZONE
+                       BASE_ZONE, 
+                       AGENT_SPEED_SIGMA,
+                       RENDER
                        )
 
 class Simulation:
     def __init__(self):
-        random.seed(42)
+        # random.seed(42)
         self.total_agents = AGENT_COUNT
         self.frame_counter = 0
         self.metrics = Metrics(AGENT_COUNT)
@@ -72,21 +74,22 @@ class Simulation:
                 x = max(box_left + radius, min(x, box_left + box_width - radius))
                 y = max(box_top + radius, min(y, box_top + box_height - radius))
 
-                # Obstacle collision detection
+                # Obstacle collision detection for the big obstacle
                 for obstacle in obstacles:
-                    if (obstacle.left - radius <= x <= obstacle.left + obstacle.width + radius) and (
-                            obstacle.top - radius <= y <= obstacle.top + obstacle.height + radius):
-                        # Adjust x position if in an Obstacle
-                        if x < obstacle.left:
-                            x = obstacle.left - radius
-                        elif x > obstacle.left + obstacle.width:
-                            x = obstacle.left + obstacle.width + radius
+                    if obstacle.width == BIG_OBSTACLE_W and obstacle.height == BIG_OBSTACLE_H:
+                        if (obstacle.left - radius <= x <= obstacle.left + obstacle.width + radius) and (
+                                obstacle.top - radius <= y <= obstacle.top + obstacle.height + radius):
+                            # Adjust x position if in an Obstacle
+                            if x < obstacle.left:
+                                x = obstacle.left - radius
+                            elif x > obstacle.left + obstacle.width:
+                                x = obstacle.left + obstacle.width + radius
 
-                        # Adjust y position if in an Obstacle
-                        if y < obstacle.top:
-                            y = obstacle.top - radius
-                        elif y > obstacle.top + obstacle.height:
-                            y = obstacle.top + obstacle.height + radius
+                            # Adjust y position if in an Obstacle
+                            if y < obstacle.top:
+                                y = obstacle.top - radius
+                            elif y > obstacle.top + obstacle.height:
+                                y = obstacle.top + obstacle.height + radius
 
             # resolve_positions is not allowed to make an arbitrary size displacement to the agents
             old_pos = positions[i]
@@ -102,7 +105,7 @@ class Simulation:
         
 
         # Resolve overlaps between agents
-        for i in range(n_agents):
+        """ for i in range(n_agents):
             
             for j in range(i + 1, n_agents):
                 pos_i = positions[i]
@@ -140,7 +143,7 @@ class Simulation:
                         if not in_exit_area:
                             agent_position[0] = max(box_left + radius, min(agent_position[0], box_left + box_width - radius))
                             agent_position[1] = max(box_top + radius, min(agent_position[1], box_top + box_height - radius))
-                        
+                         """
 
         return positions.tolist()
 
@@ -172,12 +175,13 @@ class Simulation:
                 agents[j].distances[agents[i].id] = distance
 
 
-    def main_loop(self):
+    def main_loop(self, avg_speed=AGENT_AVG_SPEED, sigma=AGENT_SPEED_SIGMA):
         # Initialize Pygame
-        pygame.init()
-        screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        clock = pygame.time.Clock()
-        start_ticks = pygame.time.get_ticks()
+        if RENDER:
+            pygame.init()
+            screen = pygame.display.set_mode((WIDTH, HEIGHT))
+            clock = pygame.time.Clock()
+            start_ticks = pygame.time.get_ticks()
 
         # Agents start behind the desks
         starting_positions = []
@@ -187,46 +191,47 @@ class Simulation:
                 col = j
                 starting_positions.append((BOX_LEFT + 75 - AGENT_RADIUS + col * (AGENT_RADIUS + OBSTACLE_WIDTH*2 - AGENT_RADIUS), BOX_TOP + CORR_WIDTH + AGENT_RADIUS + 5 + (row)* AGENT_RADIUS*3))
 
-        agents = [Agent(x, y, id) for (id, (x, y)) in enumerate(starting_positions)]
+        agents = [Agent(x, y, id, avg_speed, sigma) for (id, (x, y)) in enumerate(starting_positions)]
         
         # Main loop
         running = True
         paused = False
         while running:
             # Pause block
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE:
-                        paused = not paused
-            if paused:
-                continue
+            if RENDER:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_SPACE:
+                            paused = not paused
+                if paused:
+                    continue
 
-            screen.fill(BLACK)
+                screen.fill(BLACK)
+                
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
             
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-            
-            # Box
-            pygame.draw.rect(screen, BOX_COLOR, (BOX_LEFT, BOX_TOP, BOX_WIDTH, BOX_HEIGHT), 1)
-            
-            # Draw all exits
-            for exit in EXITS:
-                pygame.draw.rect(screen, EXIT_COLOR, (*exit["position"], exit["width"], exit['height']))
+                # Box
+                pygame.draw.rect(screen, BOX_COLOR, (BOX_LEFT, BOX_TOP, BOX_WIDTH, BOX_HEIGHT), 1)
+                
+                # Draw all exits
+                for exit in EXITS:
+                    pygame.draw.rect(screen, EXIT_COLOR, (*exit["position"], exit["width"], exit['height']))
 
-            # Clock
-            pygame.draw.rect(screen, BOX_COLOR, (CLOCK_BOX_LEFT, CLOCK_BOX_TOP, CLOCK_BOX_WIDTH, CLOCK_BOX_HEIGHT), 1)
+                # Clock
+                pygame.draw.rect(screen, BOX_COLOR, (CLOCK_BOX_LEFT, CLOCK_BOX_TOP, CLOCK_BOX_WIDTH, CLOCK_BOX_HEIGHT), 1)
 
-            # zones for subgoal finding
-            if VISUALIZE_SUBGOALS:
-                for subgoals_dicts in SUBGOAL_ZONES.values():
-                    subgoals = [Obstacle(**p) for p in subgoals_dicts]
-                    for subgoal in subgoals:
-                        subgoal.draw(screen)
-                base_zone = Obstacle(**BASE_ZONE)
-                base_zone.draw(screen)
+                # zones for subgoal finding
+                if VISUALIZE_SUBGOALS:
+                    for subgoals_dicts in SUBGOAL_ZONES.values():
+                        subgoals = [Obstacle(**p) for p in subgoals_dicts]
+                        for subgoal in subgoals:
+                            subgoal.draw(screen)
+                    base_zone = Obstacle(**BASE_ZONE)
+                    base_zone.draw(screen)
             
             # Obstacles
             obstacles = []
@@ -234,8 +239,9 @@ class Simulation:
                 obstacles.append(Obstacle(BOX_LEFT + 75 + (i) * OBSTACLE_WIDTH * 2, BOX_TOP + CORR_WIDTH, OBSTACLE_WIDTH, OBSTACLE_HEIGHT))
             obstacles.append(Obstacle(BOX_LEFT + ((1250+450+90) // SCALING), BOX_TOP + CORR_WIDTH + (55//SCALING), BIG_OBSTACLE_W, BIG_OBSTACLE_H))
             
-            for obstacle in obstacles:
-                obstacle.draw(screen)
+            if RENDER:
+                for obstacle in obstacles:
+                    obstacle.draw(screen)
 
             # Epsilon for escape-easing
             epsilon=2
@@ -293,24 +299,30 @@ class Simulation:
                 agent.position.x, agent.position.y = resolved_positions[i]
 
             # Draw all agents
-            for agent in agents:
-                agent.draw(screen)
+            if RENDER:
+                for agent in agents:
+                    agent.draw(screen)
 
-            # Clock update
-            elapsed_time_sec = (pygame.time.get_ticks()-start_ticks)/1000
-            time_text = pygame.font.Font(None, 26).render(f"Time: {elapsed_time_sec:.2f}", True, (255, 255, 255))
-            screen.blit(time_text, (CLOCK_BOX_LEFT+5, CLOCK_BOX_TOP+8))
-            self.frame_counter += 1
-            time_text = pygame.font.Font(None, 26).render(f"Frames: {self.frame_counter}", True, (255, 255, 255))
-            screen.blit(time_text, (CLOCK_BOX_LEFT+5, CLOCK_BOX_TOP+32))
+                # Clock update
+                elapsed_time_sec = (pygame.time.get_ticks()-start_ticks)/1000
+                time_text = pygame.font.Font(None, 26).render(f"Time: {elapsed_time_sec:.2f}", True, (255, 255, 255))
+                screen.blit(time_text, (CLOCK_BOX_LEFT+5, CLOCK_BOX_TOP+8))
+                self.frame_counter += 1
+                time_text = pygame.font.Font(None, 26).render(f"Frames: {self.frame_counter}", True, (255, 255, 255))
+                screen.blit(time_text, (CLOCK_BOX_LEFT+5, CLOCK_BOX_TOP+32))
 
-            pygame.display.flip()
+                pygame.display.flip()
 
-            # Framerate set to maximum of 60 FPS
-            clock.tick(60)
-
-        pygame.quit()
-
+                # Framerate set to maximum of 60 FPS
+                clock.tick(60)
+        if RENDER:
+            pygame.quit()
+        avg_panics = []
+        for panic in self.metrics.agent_panic:
+            avg_panics.append(np.mean(panic))
+        mean_panic = np.mean(avg_panics)
+        print(f"Avg speed: {avg_speed}, Sigma: {sigma}, avg evac time: {np.mean(self.metrics.agent_ticks)}, avg panic: {mean_panic}")
+        return (np.mean(self.metrics.agent_ticks)), mean_panic
         # self.metrics.show_tick_distribution()
         # self.metrics.show_mean_panic_distribution()
         # self.metrics.plot_average_panic_over_time()
