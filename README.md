@@ -11,15 +11,15 @@ pip install -r requirements.txt
 Run main.py to start the simulation
 ### Constants
 Important parameters in constants.py:
+
 ```RENDER = True```
 Enables or disabler rendering
-
 ```EXITS = [
     {"position": (BOX_LEFT + ((1250+450)//SCALING), BOX_TOP - EXIT_HEIGHT), "width": EXIT_WIDTH, "height": EXIT_HEIGHT},
     # Comment or uncomment second exit
     # {"position": (BOX_LEFT + ((1250+450)//SCALING), BOX_TOP + BOX_HEIGHT), "width": EXIT_WIDTH, "height": EXIT_HEIGHT},
 ]```
-Comment r uncomment second exit
+Comment or uncomment second exit
 ``AGENT_AVG_SPEED = 1.67```
 Mean of the uniform distribution from which the agent speed are sampled
 ```AGENT_SPEED_SIGMA = 0.01```
