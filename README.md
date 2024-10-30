@@ -12,23 +12,24 @@ Run main.py to start the simulation
 ### Constants
 Important parameters in constants.py:
 
-```RENDER = True```
-Enables or disabler rendering
+```RENDER```
+Enables or disables rendering
 
-```EXIT_WIDTH = 180 // SCALING```
+```EXIT_WIDTH```
 Controls the width of the exit(s)
 
 ```EXITS```
 This is a list of exits, you can comment or uncomment the second element to change the number of exits
 
-```AGENT_AVG_SPEED = 1.67```
+```AGENT_AVG_SPEED```
 Mean of the uniform distribution from which the agent speeds are sampled
 
-```AGENT_SPEED_SIGMA = 0.01```
-Distribution boundaries are given by ```[AGENT_AVG_SPEED-AGENT_SPEED_SIGMA*AGENT_AVG_SPEED, AGENT_AVG_SPEED+AGENT_SPEED_SIGMA*AGENT_AVG_SPEED]```
+```AGENT_SPEED_SIGMA```
+Distribution boundaries are given by
+```[AGENT_AVG_SPEED-AGENT_SPEED_SIGMA*AGENT_AVG_SPEED, AGENT_AVG_SPEED+AGENT_SPEED_SIGMA*AGENT_AVG_SPEED]```
 
-```SEPARATION_THRESHOLD = 2.0```
-Controls how much overlap is allowed between agents
+```SEPARATION_THRESHOLD```
+Decrease to allow some overlap between agents
 
 ### Experiment
 
