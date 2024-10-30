@@ -30,6 +30,10 @@ Distribution boundaries are given by ```[AGENT_AVG_SPEED-AGENT_SPEED_SIGMA*AGENT
 ```SEPARATION_THRESHOLD = 2.0```
 Controls how much overlap is allowed between agents
 
+### Experiment
+
+With ```run_experiments``` in main.py, you can run an experiment where multiple settings of ```AGENT_AVG_SPEED```, ```AGENT_SPEED_SIGMA``` and ```SEPARATION_THRESHOLD```
+
 
 
 
