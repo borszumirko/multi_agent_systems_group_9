@@ -15,12 +15,11 @@ Important parameters in constants.py:
 ```RENDER = True```
 Enables or disabler rendering
 
-```EXITS = [
-    {"position": (BOX_LEFT + ((1250+450)//SCALING), BOX_TOP - EXIT_HEIGHT), "width": EXIT_WIDTH, "height": EXIT_HEIGHT},
-    # Comment or uncomment second exit
-    # {"position": (BOX_LEFT + ((1250+450)//SCALING), BOX_TOP + BOX_HEIGHT), "width": EXIT_WIDTH, "height": EXIT_HEIGHT},
-]```
+```EXIT_WIDTH = 180 // SCALING```
+Controls the width of the exit(s)
 
+'''EXITS'''
+This is a list of exits, you can comment or uncomment the second element to change the number of exits
 
 ```AGENT_AVG_SPEED = 1.67```
 Mean of the uniform distribution from which the agent speeds are sampled
@@ -30,5 +29,7 @@ Distribution boundaries are given by ```[AGENT_AVG_SPEED-AGENT_SPEED_SIGMA*AGENT
 
 ```SEPARATION_THRESHOLD = 2.0```
 Controls how much overlap is allowed between agents
+
+
 
 
