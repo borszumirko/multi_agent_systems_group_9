@@ -1,10 +1,6 @@
 # Env constants
 SCALING = 2
-
-#Simulation Constants
-HIGH_SEPARATION_FORCE = False
-AGENT_SPEED_SIGMA = 0.2
-
+RENDER = True
 
 CORR_WIDTH = 150 // SCALING
 OBSTACLE_WIDTH = 50 // SCALING
@@ -12,7 +8,9 @@ OBSTACLE_HEIGHT = 870 // SCALING
 BIG_OBSTACLE_H = 760 // SCALING
 BIG_OBSTACLE_W = 100 // SCALING
 
-CSV_FILE_NAME = "Experiment_3.csv"
+CSV_FILE_NAME = "Experiment.csv"
+# Column names for the CSV
+COLUMN_NAMES = ["sep_threshold","avg_speed","sigma","avg_evac_time","avg_panic"]
 WIDTH, HEIGHT = 2700 // SCALING, 1400 // SCALING
 BOX_WIDTH, BOX_HEIGHT = 2080 // SCALING, 1180 // SCALING
 BOX_LEFT = (WIDTH - BOX_WIDTH) // 2
@@ -23,10 +21,9 @@ ENV_LENGTH = BOX_WIDTH
 EXIT_HEIGHT = 15
 EXITS = [
     {"position": (BOX_LEFT + ((1250+450)//SCALING), BOX_TOP - EXIT_HEIGHT), "width": EXIT_WIDTH, "height": EXIT_HEIGHT},
-    #{"position": (BOX_LEFT + ((1250+450)//SCALING), BOX_TOP + BOX_HEIGHT), "width": EXIT_WIDTH, "height": EXIT_HEIGHT},
-    # Add more exits as needed
+    # Comment or uncomment second exit
+    # {"position": (BOX_LEFT + ((1250+450)//SCALING), BOX_TOP + BOX_HEIGHT), "width": EXIT_WIDTH, "height": EXIT_HEIGHT},
 ]
-
 
 # Clock Box dimensions
 CLOCK_BOX_WIDTH = 120
@@ -35,12 +32,12 @@ CLOCK_BOX_LEFT = (BOX_LEFT + BOX_WIDTH) + int((BOX_LEFT - CLOCK_BOX_WIDTH)/2)  #
 CLOCK_BOX_TOP = BOX_TOP
 
 # Agent constants
-AGENT_AVG_SPEED = 2
-AGENT_MAX_FORCE = 2
-AGENT_PERCEPTION = 4
-AGENT_RADIUS = 22 // SCALING
+AGENT_AVG_SPEED = 1.67
+AGENT_SPEED_SIGMA = 0.01
+AGENT_RADIUS = 19 // SCALING
 AGENT_COUNT = 240
 AGENT_COLOR = (255, 255, 255)
+SEPARATION_THRESHOLD = 2.0
 
 # Colors
 WHITE = (255, 255, 255)
