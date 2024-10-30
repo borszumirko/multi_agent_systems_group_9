@@ -6,11 +6,16 @@ import numpy as np
 # A zone counts as entered after being obstacle_padding pixels deep
 obstacle_padding = 3
 
-def find_subgoal(subgoal_indicator, agent_location):
+def find_subgoal(subgoal_indicator:int, agent_location:pygame.Vector2) -> tuple[pygame.Vector2, bool]:
     """
-        Takes the subgoal-id and the location of the agent and gives back the direction to the nearest subgoal-zone.
-        The subgoal-zones are predefined by the constants-file.
-        If the subgoal is reached the second return will be True.
+    Calculates the direction to the nearest subgoal zone based on the agent's current location and target subgoal ID.
+    
+    Parameters:
+        subgoal_indicator (int): The ID of the target subgoal zone, as defined in `SUBGOAL_ZONES`.
+        agent_location (pygame.Vector2): The current position of the agent.
+        
+    Returns:
+        tuple: A `pygame.Vector2` position for the nearest subgoal, and a boolean indicating whether the agent is in the subgoal zone.
     """
     subgoals_dicts = SUBGOAL_ZONES[subgoal_indicator]
     subgoals = [Obstacle(**p) for p in subgoals_dicts]
@@ -45,9 +50,17 @@ def find_subgoal(subgoal_indicator, agent_location):
     return target, False
 
 
-def am_i_stuck(agent_location, zone_id):
+def am_i_stuck(agent_location:pygame.Vector2, zone_id:int) -> bool:
     """
-        Fixing the scenario, that the agents get shoved back into the benches. So they update their subgoal to the previous one.
+    Checks if an agent is stuck, particularly if it has been pushed back into obstacles (like benches).
+    Updates the subgoal if the agent is stuck.
+    
+    Parameters:
+        agent_location (pygame.Vector2): The current position of the agent.
+        zone_id (int): The ID of the target zone to determine if the agent is stuck.
+    
+    Returns:
+        bool: True if the agent is determined to be stuck and should adjust its subgoal, False otherwise.
     """
     base_zone = Obstacle(**BASE_ZONE)
     if not zone_id:
