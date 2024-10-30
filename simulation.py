@@ -39,7 +39,7 @@ from constants import (EXITS,
 
 
 class Simulation:
-    def __init__(self):
+    def __init__(self, run_name=CSV_FILE_NAME, show_plots=True):
         self.total_agents = AGENT_COUNT
         self.frame_counter = 0
         self.metrics = Metrics(AGENT_COUNT, run_name=run_name)
