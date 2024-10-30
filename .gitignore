@@ -26,3 +26,6 @@ profiling_stats*
 # Folders
 runs/
 plots/
+
+# Videos
+*.mp4

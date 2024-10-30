@@ -3,7 +3,6 @@ import random
 import numpy as np
 from subgoals import find_subgoal
 from constants import (
-    AGENT_MAX_FORCE,
     AGENT_AVG_SPEED,
     AGENT_RADIUS,
     EXITS,
@@ -18,7 +17,8 @@ from constants import (
     CORR_WIDTH,
     OBSTACLE_HEIGHT,
     AGENT_SPEED_SIGMA,
-    SUBGOAL_N
+    SUBGOAL_N,
+    SEPARATION_THRESHOLD,
 )
 
 def normalize_non_zero(vector):
@@ -34,7 +34,6 @@ class Agent:
         self.velocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
         self.acceleration = pygame.Vector2(0, 0)
         self.max_speed = np.random.uniform(avg_speed - avg_speed*sigma, avg_speed + avg_speed*sigma)
-        self.max_force = AGENT_MAX_FORCE
         self.avoid_distance = 2 * AGENT_RADIUS + 2
         self.cohesion_distance = 8 * AGENT_RADIUS
         self.alignment_distance = 4 * AGENT_RADIUS
@@ -42,14 +41,11 @@ class Agent:
         self.id = id
         self.distances = np.full(AGENT_COUNT, fill_value=-1) # distance of agents around
         self.color = AGENT_COLOR
-        self.previous_update = pygame.Vector2(0, 0)
         self.panic = 0
         self.ease_distance = AGENT_RADIUS * 10
-        self.physical_discomfort = 0
         self.avg_panic_around = 0
         self.in_exit_area = False
         self.highlight = False
-
         # Subgoal counter
         self.subgoal_indicator = 0
 
@@ -65,27 +61,19 @@ class Agent:
         Update boid's velocity and position.
         """
 
-        # if self.acceleration.length() > self.max_force:
-        #         self.acceleration.scale_to_length(self.max_force)
         # panic influences change in velocity
         self.velocity = self.velocity * self.panic + self.acceleration * (1 - self.panic)
-        # if self.velocity.length() > self.max_speed:
-        #     self.velocity.scale_to_length(self.max_speed)
-        self.velocity.scale_to_length(self.max_speed)
-            # self.highlight = True
-        # else:
-        #     self.highlight = False
-            
+        self.velocity.scale_to_length(self.max_speed) 
         self.position += self.velocity
         self.acceleration *= 0
 
-    def flock(self, agents, obstacles):
+    def flock(self, agents, obstacles, sep_threshold):
         """
         Apply flocking behaviors with a bias towards the exit.
         """
         alignment, align_panic = self.align(agents)
         cohesion, physical_panic = self.cohere(agents)
-        separation = self.separate(agents)
+        separation = self.separate(agents, sep_threshold)
         exit_steering, exit_panic = self.steer_to_exit()
         avoid_obstacles = self.avoid_obstacles(obstacles)
         
@@ -156,20 +144,20 @@ class Agent:
             self.avg_panic_around = others_panic
             steering /= total
             steering -= self.position
-            # steering -= self.velocity
             steering = normalize_non_zero(steering)
             steering *= 1.5
 
             # /45 instead of /len(agents), since we have more agents than in the paper.
             # 45 is the maximum number of other agents close by, given the cohesion_distance
             # panic_component = total / (45)
+            # maximum uber of neighors in R*3 radius is 6 so we normalize by 6
             panic_component = close_neighbors / 6
         
         return steering, panic_component
 
-    def separate(self, agents):
+    def separate(self, agents, sep_threshold):
         '''
-        Agent try to separate themself from nearby agents within
+        Agents try to separate themself from nearby agents within
         self.avoid_distance
         '''
         total = 0
@@ -182,11 +170,10 @@ class Agent:
                 diff /= distance + 0.00000000001
                 steering += diff
                 total += 1
-            if distance < AGENT_RADIUS * 2:
-                weight *= 2
+            if distance < AGENT_RADIUS * sep_threshold and distance != -1:
+                weight *= 5
         if total > 0:
             steering /= total
-            # steering -= self.velocity
             steering = normalize_non_zero(steering)
             steering *= weight
             
@@ -214,7 +201,6 @@ class Agent:
         steering = target - self.position
         panic_component = 1 / ENV_LENGTH * (steering.length() - self.ease_distance)
         
-        # steering -= self.velocity
         steering = normalize_non_zero(steering)
         steering *= 6.5
         
@@ -239,7 +225,6 @@ class Agent:
                 self.highlight = False
         if total > 0:
             steering /= total
-            # steering -= self.velocity
             steering = normalize_non_zero(steering)
             steering *= weight
             

@@ -1,7 +1,6 @@
 from constants import SUBGOAL_ZONES, AGENT_RADIUS, WIDTH, HEIGHT, BASE_ZONE
 from obstacle import Obstacle
 import pygame
-import numpy as np
 
 # A zone counts as entered after being obstacle_padding pixels deep
 obstacle_padding = 3
