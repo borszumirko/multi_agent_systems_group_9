@@ -18,7 +18,7 @@ Enables or disabler rendering
 ```EXIT_WIDTH = 180 // SCALING```
 Controls the width of the exit(s)
 
-'''EXITS'''
+```EXITS```
 This is a list of exits, you can comment or uncomment the second element to change the number of exits
 
 ```AGENT_AVG_SPEED = 1.67```
