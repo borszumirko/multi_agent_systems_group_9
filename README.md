@@ -15,7 +15,7 @@ Important parameters in constants.py:
 ```RENDER = True```
 Enables or disabler rendering
 
-``AGENT_AVG_SPEED = 1.67```
+```AGENT_AVG_SPEED = 1.67```
 Mean of the uniform distribution from which the agent speeds are sampled
 
 ```AGENT_SPEED_SIGMA = 0.01```
