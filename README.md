@@ -15,6 +15,13 @@ Important parameters in constants.py:
 ```RENDER = True```
 Enables or disabler rendering
 
+```EXITS = [
+    {"position": (BOX_LEFT + ((1250+450)//SCALING), BOX_TOP - EXIT_HEIGHT), "width": EXIT_WIDTH, "height": EXIT_HEIGHT},
+    # Comment or uncomment second exit
+    # {"position": (BOX_LEFT + ((1250+450)//SCALING), BOX_TOP + BOX_HEIGHT), "width": EXIT_WIDTH, "height": EXIT_HEIGHT},
+]```
+
+
 ```AGENT_AVG_SPEED = 1.67```
 Mean of the uniform distribution from which the agent speeds are sampled
 
