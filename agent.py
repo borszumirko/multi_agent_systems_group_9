@@ -1,6 +1,7 @@
 import pygame
 import random
 import numpy as np
+from obstacle import Obstacle
 from subgoals import find_subgoal
 from constants import (
     AGENT_AVG_SPEED,
@@ -20,6 +21,9 @@ from constants import (
 
 
 def normalize_non_zero(vector):
+    """
+    Normalizes vector to length 1. (if the vector is (0,0) the input vector is returned)
+    """
     null_vec = pygame.Vector2(0, 0)
     if vector != null_vec:
         return vector.normalize()
@@ -262,17 +266,32 @@ class Agent:
 
         return steering, total
 
-    def is_in_obstacle(self, obstacle, buffer_radius):
+    def is_in_obstacle(self, obstacle: Obstacle, buffer_radius:float = 0.0):
+        """
+        Check if agent is inside an obstacle with an increased buffer radius around obstacle.
+
+        Parameters:
+            obstacle (Obstacle): obstacle to check if agent is in
+            buffer_radius (float): additional radius around the obstacle to consider the agent in the obstacle
+        """
         rect = pygame.Rect(obstacle.left - buffer_radius, obstacle.top - buffer_radius
                            , obstacle.width + 2 * buffer_radius, obstacle.height + 2 * buffer_radius)
         return rect.collidepoint(self.position)
 
     def draw(self, screen):
+        """
+        Draw agent on screen.
+        """
         if self.highlight:
             pygame.draw.circle(screen, (0, 255, 0), (int(self.position.x), int(self.position.y)), AGENT_RADIUS + 2)
         pygame.draw.circle(screen, self.color, (int(self.position.x), int(self.position.y)), AGENT_RADIUS)
 
     def calculate_exit_distances(self):
+        """
+        Calculate the distance to each exit and save it in self.exit_distances
+
+        :return: None
+        """
         exit_vectors = [pygame.Vector2(e["position"][0] - e["width"] // 2, e["position"][1] - e["height"] // 2) for e in
                         EXITS]
         self.exit_distances = [self.position.distance_to(center) for center in exit_vectors]
